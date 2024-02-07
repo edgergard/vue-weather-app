@@ -1,6 +1,6 @@
 <h1 align="center">Weather App</h1>
 
-- [DEMO](https://edgergard.github.io/vue-geometry-map/)
+- [DEMO](https://edgergard.github.io/vue-weather-app/)
  <h2 align="center">About</h2>
 
   Weather App.
