@@ -1,5 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { OutletContainer, WeatherCardList } from "./components";
+</script>
 
 <template>
-  <div>Weather App</div>
+  <OutletContainer>
+    <WeatherCardList />
+  </OutletContainer>
 </template>
