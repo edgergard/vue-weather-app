@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { OutletContainer } from "./components";
-import { WeatherCardsPage } from "./pages";
+import { SelectedCardPage } from "./pages";
 </script>
 
 <template>
   <OutletContainer>
-    <WeatherCardsPage />
+    <SelectedCardPage />
   </OutletContainer>
 </template>
