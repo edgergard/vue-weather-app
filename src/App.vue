@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { OutletContainer, WeatherCardList } from "./components";
+import { OutletContainer } from "./components";
+import { WeatherCardsPage } from "./pages";
 </script>
 
 <template>
   <OutletContainer>
-    <WeatherCardList />
+    <WeatherCardsPage />
   </OutletContainer>
 </template>

@@ -1,5 +1,6 @@
 <template>
-  <div class="flex gap-4">
+  <div class="grid grid-cols-4 gap-4">
+    <WeatherCard />
     <WeatherCard />
     <WeatherCard />
     <WeatherCard />
