@@ -1,5 +1,5 @@
 <template>
-  <div class="py-4 px-6 min-w-72 rounded-xl bg-[#333333] text-[#FFF]">
+  <router-link to="/selected" class="py-4 px-6 min-w-72 rounded-xl bg-[#333333] text-[#FFF]">
     <p class="text-center text-base">Kyiv, UA</p>
 
     <img :src="image" alt="card-image" class="mx-auto" />
@@ -12,7 +12,7 @@
       <p>Humidity: 84%</p>
       <p>Wind: 4 km/h</p>
     </div>
-  </div>
+  </router-link>
 </template>
 
 <script setup lang="ts">

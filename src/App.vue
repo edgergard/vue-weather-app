@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { OutletContainer } from "./components";
-import { SelectedCardPage } from "./pages";
+import { ViewContainer } from "./components";
 </script>
 
 <template>
-  <OutletContainer>
-    <SelectedCardPage />
-  </OutletContainer>
+  <ViewContainer>
+    <router-view></router-view>
+  </ViewContainer>
 </template>
