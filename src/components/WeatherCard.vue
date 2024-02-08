@@ -1,7 +1,7 @@
 <template>
   <router-link
     to="/selected"
-    class="py-4 px-6 min-w-72 rounded-xl bg-opacity-0 text-[#FFF] shadow-2xl border border-[#FFF] border-opacity-30"
+    class="py-4 px-6 min-w-72 rounded-xl bg-opacity-0 text-[#FFF] shadow-2xl border border-[#FFF] border-opacity-30 hover:bg-[#804FB3] transition-all"
   >
     <p class="text-center text-base">Kyiv, UA</p>
 

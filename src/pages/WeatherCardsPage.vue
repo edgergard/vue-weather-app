@@ -1,8 +1,8 @@
 <template>
-  <LocationInput />
+  <SearchInput />
   <WeatherCardList />
 </template>
 
 <script setup lang="ts">
-import { LocationInput, WeatherCardList } from "../components";
+import { SearchInput, WeatherCardList } from "../components";
 </script>

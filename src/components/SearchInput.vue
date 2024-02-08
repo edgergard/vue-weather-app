@@ -5,6 +5,7 @@
     </router-link>
 
     <input
+      v-model="searchQuery"
       type="text"
       placeholder="Enter location name"
       class="w-full h-8 px-4 py-6 rounded-lg bg-transparent shadow-2xl text-[#FFF] border border-[#FFF] border-opacity-30 outline-[#FFF]"
@@ -14,4 +15,7 @@
 
 <script setup lang="ts">
 import home from "../assets/home.svg";
+import { ref } from "vue";
+
+const searchQuery = ref('');
 </script>

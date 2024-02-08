@@ -1,8 +1,8 @@
 <template>
-  <LocationInput />
+  <SearchInput />
   <SelectedCard />
 </template>
 
 <script setup lang="ts">
-import { LocationInput, SelectedCard } from "../components";
+import { SearchInput, SelectedCard } from "../components";
 </script>
