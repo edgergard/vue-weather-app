@@ -1,9 +1,9 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import { SelectedCardPage, WeatherCardsPage } from "../pages";
+import { LocationView, HomeView } from "../views";
 
 const routes = [
-  { path: "/", name: "Home", component: WeatherCardsPage },
-  { path: "/selected", name: "Selected", component: SelectedCardPage },
+  { path: "/", name: "Home", component: HomeView },
+  { path: "/location", name: "Location", component: LocationView },
 ];
 
 export const router = createRouter({

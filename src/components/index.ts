@@ -1,12 +1,12 @@
-import WeatherCard from "./WeatherCard.vue";
-import WeatherCardList from "./WeatherCardList.vue";
+import LocationCard from "./LocationCard.vue";
+import LocationCardList from "./LocationCardList.vue";
 import ViewContainer from "./ViewContainer.vue";
 import SearchInput from "./SearchInput.vue";
 import SelectedCard from "./SelectedCard.vue";
 
 export {
-  WeatherCard,
-  WeatherCardList,
+  LocationCard,
+  LocationCardList,
   ViewContainer,
   SearchInput,
   SelectedCard,
