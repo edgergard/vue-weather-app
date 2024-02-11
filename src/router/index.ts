@@ -3,7 +3,7 @@ import { LocationView, HomeView } from "../views";
 
 const routes = [
   { path: "/", name: "Home", component: HomeView },
-  { path: "/location", name: "Location", component: LocationView },
+  { path: "/location/:state/:city", name: "Location", component: LocationView },
 ];
 
 export const router = createRouter({

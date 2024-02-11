@@ -47,7 +47,19 @@
 </template>
 
 <script setup lang="ts">
+import { getWeatherData } from "../api/getWeatherData";
 import image from "../assets/image.png";
+import { onMounted, ref } from "vue";
+import { useRoute } from 'vue-router'
+
+const route = useRoute();
+console.log(route.query);
+const [lat, lon] = [route.query.lat, route.query.lon];
 
 const list = [1, 1, 1, 1, 1, 1, 1, 1];
+const weatherData = ref(null);
+
+onMounted(() => {
+  weatherData.value = getWeatherData(lat, lon);
+})
 </script>

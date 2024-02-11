@@ -1,3 +1,4 @@
 import { getLocations } from "./getLocations";
+import { getWeatherData } from "./getWeatherData";
 
-export { getLocations };
+export { getLocations, getWeatherData };
