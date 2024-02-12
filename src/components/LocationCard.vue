@@ -1,5 +1,5 @@
 <template>
-  <div v-if="weatherData" class="relative" >
+  <div v-if="weatherData" class="relative">
     <div
       to="/"
       class="min-h-[400px] py-4 px-6 min-w-72 rounded-xl bg-opacity-0 text-[#FFF] shadow-2xl border border-[#FFF] border-opacity-30 hover:bg-[#804FB3] transition-all cursor-pointer"
@@ -46,7 +46,7 @@
     </div>
 
     <div class="z-10 absolute top-2 right-2 flex items-center">
-      <button 
+      <button
         class="rounded-full hover:bg-violet-900 p-2"
         @click="toggleRefresh"
       >

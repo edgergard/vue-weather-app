@@ -21,7 +21,9 @@ import { ref, watch } from "vue";
 import { LocationType } from "../types";
 
 const savedLocationsData = localStorage.getItem("savedLocations");
-const savedLocations = ref<LocationType[]>(savedLocationsData ? JSON.parse(savedLocationsData) : []);
+const savedLocations = ref<LocationType[]>(
+  savedLocationsData ? JSON.parse(savedLocationsData) : [],
+);
 
 const removeLocation = (id: string) => {
   const index = savedLocations.value.findIndex(
@@ -30,7 +32,7 @@ const removeLocation = (id: string) => {
 
   if (index !== -1) {
     savedLocations.value.splice(index, 1);
-  };
+  }
 };
 
 watch(savedLocations.value, (newValue) => {

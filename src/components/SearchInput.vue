@@ -41,8 +41,8 @@
           {{ searchResult.place_name }}
         </li>
       </ul>
-      
-      <p 
+
+      <p
         v-else-if="searchQuery && !searchResults?.length"
         class="absolute bg-[#FFF] text-[#000] w-full shadow-md top-16 rounded-lg z-20 py-2 px-2"
       >
@@ -57,7 +57,7 @@ import { home, close } from "../assets";
 import { ref } from "vue";
 import { getLocations } from "../api";
 import { useRouter } from "vue-router";
-import { SearchResult } from '../types';
+import { SearchResult } from "../types";
 
 const searchQuery = ref("");
 const searchResults = ref<SearchResult[] | null>(null);
@@ -69,7 +69,7 @@ const router = useRouter();
 const previewLocation = (searchResult: SearchResult) => {
   const [city, state] = searchResult.place_name.split(",");
 
-  const formattedState = state.replace(/\s/g, '');
+  const formattedState = state.replace(/\s/g, "");
 
   router.push({
     name: "Location",
@@ -82,7 +82,6 @@ const previewLocation = (searchResult: SearchResult) => {
 
   searchQuery.value = "";
 };
-
 
 const getSearchResults = () => {
   if (queryTimeout.value !== null) {

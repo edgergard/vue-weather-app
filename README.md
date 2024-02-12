@@ -1,9 +1,12 @@
 <h1 align="center">Weather App</h1>
 
 - [DEMO](https://edgergard.github.io/vue-weather-app/)
-  <h2 align="center">About</h2>
+- [Mapbox](https://www.mapbox.com/)
+- [OpenWeatherMap](https://openweathermap.org/)
 
-  Weather App.
+<h2 align="center">About</h2>
+
+  Simple weather app. Includes location search with saving location to favorites feature.
 
 <h2 align="center">Technologies used</h2>
 
@@ -11,6 +14,8 @@
 - ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 - ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 - ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
+- Vue Router
+- Axios
 
 <h2 align="center">Instructions how to run application locally</h2>
 
