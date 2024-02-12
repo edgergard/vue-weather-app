@@ -14,5 +14,8 @@ export const convertDate = (timeZone: string) => {
 export const convertTime = (mseconds: number) => {
   const date = new Date(mseconds * 1000);
 
-  return date.getHours();
+  const hours = ('0' + date.getHours()).slice(-2);
+  const minutes = ('0' + date.getMinutes()).slice(-2); 
+  
+  return `${hours}:${minutes}`;
 };

@@ -5,7 +5,7 @@
       class="min-h-[400px] py-4 px-6 min-w-72 rounded-xl bg-opacity-0 text-[#FFF] shadow-2xl border border-[#FFF] border-opacity-30 hover:bg-[#804FB3] transition-all cursor-pointer"
       @click="previewLocation()"
     >
-      <p class="min-h-[56px] w-48 md:w-64 text-start text-lg md:text-xl">
+      <p class="min-h-[56px] w-32 md:w-40 text-start text-lg md:text-xl break-words">
         {{ `${location.city}, ${location.state}` }}
       </p>
 
@@ -24,25 +24,40 @@
       </p>
 
       <div class="flex flex-col gap-y-1">
-        <p>
-          {{ `Real feel: ${weatherData.current.feels_like.toFixed(0)}°` }}
-        </p>
+        <div class="flex items-center gap-x-2">
+          <img :src="thermometer" alt="thermometer-icon" class="w-7 h-7" />
+          <p>{{ `Real feel: ${weatherData.current.feels_like.toFixed(0)}°` }}</p>
+        </div>
 
-        <p>{{ `Humidity: ${weatherData.current.humidity}%` }}</p>
+        <div class="flex items-center gap-x-2">
+          <img :src="humidity" alt="humidity-icon" class="w-7 h-7" />
+          <p>{{ `Humidity: ${weatherData.current.humidity}%` }}</p>
+        </div>
+    
 
-        <p>{{ `Wind: ${weatherData.current.wind_speed} km/h` }}</p>
+
+        <div class="flex items-center gap-x-2">
+          <img :src="wind" alt="wind-icon" class="w-7 h-7" />
+          <p>{{ `Wind: ${weatherData.current.wind_speed} km/h` }}</p>
+        </div>
+
       </div>
     </div>
 
-    <button class="z-10 absolute top-2 right-2" @click="removeLocation">
-      <img :src="close" alt="close-icon" class="w-10 h-10">
-    </button> 
+    <div class="z-10 absolute top-2 right-2 flex items-center">
+      <button class="rounded-full hover:bg-violet-900 p-2">
+        <img :src="refresh" alt="close-icon" class="w-8 h-8">
+      </button> 
+
+      <button class="rounded-full hover:bg-violet-900 p-1" @click="removeLocation" >
+        <img :src="close" alt="close-icon" class="w-10 h-10">
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import image from "../assets/image.png";
-import close from "../assets/close.svg";
+import { close, refresh, wind, humidity, thermometer } from '../assets';
 import { useRouter } from "vue-router";
 import { defineProps, defineEmits, ref, onMounted } from "vue";
 import { getWeatherData } from "../api/getWeatherData";

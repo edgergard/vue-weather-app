@@ -21,7 +21,7 @@
   </button>
   <div
     v-if="weatherData"
-    class="text-[#FFF] grid md:grid-cols-2 xl:grid-cols-3 gap-4 break-all"
+    class="text-[#FFF] grid md:grid-cols-2 xl:grid-cols-3 gap-4 break-words"
   >
     <div
       class="bg-opacity-0 border border-[#FFF] border-opacity-30 rounded-xl py-8 px-8 shadow-2xl flex flex-col items-center justify-around gap-y-16 text-center"
@@ -78,7 +78,7 @@
 
       <ul class="grid grid-cols-2 sm:grid-cols-3 gap-6">
         <li
-          v-for="hourlyWeather in weatherData.hourly.splice(0, 9)"
+          v-for="hourlyWeather in weatherData.hourly.slice(0, 9)"
           :key="hourlyWeather"
           class="flex flex-col justify-center items-center w-[100px] px-2 py-2 border-2 rounded-xl"
         >
@@ -91,7 +91,7 @@
               class="w-10 h-10"
             />
 
-            <p>2°C</p>
+            <p>{{ `${hourlyWeather.temp.toFixed(0)}°C` }}</p>
           </div>
 
           <p class="text-sm">{{ hourlyWeather.weather[0].main }}</p>
@@ -118,6 +118,7 @@ const loadWeatherData = async () => {
   const [lat, lon] = [router.query.lat, router.query.lon];
 
   weatherData.value = await getWeatherData(lat, lon);
+  console.log(weatherData.value);
 };
 
 const saveLocation = () => {
