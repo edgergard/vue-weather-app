@@ -140,7 +140,7 @@ const removeLocation = () => {
 
   if (index !== -1) {
     savedLocations.value.splice(index, 1);
-  }
+  };
 };
 
 onMounted(loadWeatherData);
