@@ -18,11 +18,13 @@ const savedLocations = ref(
 );
 
 const removeLocation = (id) => {
-  const index = savedLocations.value.findIndex(location => location.id === id);
+  const index = savedLocations.value.findIndex(
+    (location) => location.id === id,
+  );
 
   if (index !== -1) {
     savedLocations.value.splice(index, 1);
-  };
+  }
 };
 
 watch(savedLocations.value, (newValue) => {
