@@ -133,7 +133,6 @@ const loadWeatherData = async () => {
   const [lat, lon] = [router.query.lat, router.query.lon];
 
   weatherData.value = await getWeatherData(lat, lon);
-  console.log(weatherData.value);
 };
 
 const saveLocation = () => {
