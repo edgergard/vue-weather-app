@@ -7,22 +7,22 @@
     <div class="w-full relative">
       <div
         class="flex items-center gap-x-4 h-12 rounded-lg shadow-2xl text-[#FFF] border border-[#FFF] border-opacity-30 cursor-text"
-        :class="{ 'outline': isInputFocused }"
+        :class="{ outline: isInputFocused }"
       >
         <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Enter location name"
-        class="w-full bg-transparent outline-none px-4 py-6"
-        @focus="handleInputFocus"
-        @blur="handleInputBlur"
-        @input="getSearchResults"
-      />
+          v-model="searchQuery"
+          type="text"
+          placeholder="Enter location name"
+          class="w-full bg-transparent outline-none px-4 py-6"
+          @focus="handleInputFocus"
+          @blur="handleInputBlur"
+          @input="getSearchResults"
+        />
 
         <img
           v-if="searchQuery"
-          :src="close" 
-          alt="close-icon" 
+          :src="close"
+          alt="close-icon"
           class="w-18 h-8 cursor-pointer mr-2"
           @click="searchQuery = ''"
         />
@@ -30,7 +30,7 @@
 
       <ul
         v-if="searchQuery && searchResults"
-        class="absolute bg-[#FFF] text-[#000] w-full shadow-md top-16 rounded-lg"
+        class="absolute bg-[#FFF] text-[#000] w-full shadow-md top-16 rounded-lg z-20"
       >
         <li
           v-for="searchResult in searchResults"
@@ -64,12 +64,14 @@ const previewLocation = (searchResult) => {
 
   router.push({
     name: "Location",
-    params: {state: state.replaceAll(" ", ""), city: city},
+    params: { state: state.replaceAll(" ", ""), city: city },
     query: {
       lat: searchResult.geometry.coordinates[1],
-      lon: searchResult.geometry.coordinates[0]
-    }
-  })
+      lon: searchResult.geometry.coordinates[0],
+    },
+  });
+
+  searchQuery.value = "";
 };
 
 const getSearchResults = () => {
