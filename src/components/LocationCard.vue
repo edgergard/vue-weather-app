@@ -46,7 +46,10 @@
     </div>
 
     <div class="z-10 absolute top-2 right-2 flex items-center">
-      <button class="rounded-full hover:bg-violet-900 p-2">
+      <button 
+        class="rounded-full hover:bg-violet-900 p-2"
+        @click="toggleRefresh"
+      >
         <img :src="refresh" alt="close-icon" class="w-8 h-8" />
       </button>
 
@@ -70,7 +73,7 @@
 <script setup lang="ts">
 import { close, refresh, wind, humidity, thermometer } from "../assets";
 import { useRouter } from "vue-router";
-import { defineProps, defineEmits, ref, onMounted } from "vue";
+import { defineProps, defineEmits, ref, onMounted, watch } from "vue";
 import { getWeatherData } from "../api/getWeatherData";
 import { Loader } from "../components";
 
@@ -82,6 +85,12 @@ const emit = defineEmits(["remove"]);
 
 const router = useRouter();
 const weatherData = ref(null);
+const refreshFlag = ref(false);
+
+const toggleRefresh = () => {
+  weatherData.value = null;
+  refreshFlag.value = !refreshFlag.value;
+};
 
 const previewLocation = () => {
   router.push({
@@ -109,4 +118,8 @@ const removeLocation = () => {
 };
 
 onMounted(loadWeatherData);
+
+watch(refreshFlag, () => {
+  loadWeatherData();
+});
 </script>
