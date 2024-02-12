@@ -83,7 +83,7 @@
         <ul class="grid grid-cols-2 sm:grid-cols-3 gap-6">
           <li
             v-for="hourlyWeather in weatherData.hourly.slice(0, 9)"
-            :key="hourlyWeather"
+            :key="hourlyWeather.dt"
             class="flex flex-col justify-center items-center w-[100px] px-2 py-2 border-2 rounded-xl"
           >
             <p>{{ convertTime(hourlyWeather.dt) }}</p>
@@ -119,13 +119,13 @@ import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { convertDate, convertTime } from "../utils";
 import { Loader } from '../components';
+import { WeatherData, LocationType } from "../types";
 
 const router = useRoute();
-const weatherData = ref(null);
+const weatherData = ref<WeatherData | null>(null);
 
-const savedLocations = ref(
-  JSON.parse(localStorage.getItem("savedLocations")) || [],
-);
+const savedLocationsData = localStorage.getItem("savedLocations");
+const savedLocations = ref<LocationType[]>(savedLocationsData ? JSON.parse(savedLocationsData) : []);
 
 const loadWeatherData = async () => {
   const [lat, lon] = [router.query.lat, router.query.lon];
@@ -136,7 +136,7 @@ const loadWeatherData = async () => {
 
 const saveLocation = () => {
   const location = {
-    id: Date.now(),
+    id: Date.now().toString(),
     city: router.params.city,
     state: router.params.state,
     lat: router.query.lat,

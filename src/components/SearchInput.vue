@@ -29,7 +29,7 @@
       </div>
 
       <ul
-        v-if="searchQuery && searchResults"
+        v-if="searchQuery && searchResults?.length"
         class="absolute bg-[#FFF] text-[#000] w-full shadow-md top-16 rounded-lg z-20"
       >
         <li
@@ -41,30 +41,39 @@
           {{ searchResult.place_name }}
         </li>
       </ul>
+      
+      <p 
+        v-else-if="searchQuery && !searchResults?.length"
+        class="absolute bg-[#FFF] text-[#000] w-full shadow-md top-16 rounded-lg z-20 py-2 px-2"
+      >
+        No matched locations
+      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import home from "../assets/home.svg";
-import close from "../assets/close.svg";
+import { home, close } from "../assets";
 import { ref } from "vue";
 import { getLocations } from "../api";
 import { useRouter } from "vue-router";
+import { SearchResult } from '../types';
 
 const searchQuery = ref("");
-const searchResults = ref(null);
-const queryTimeout = ref(null);
+const searchResults = ref<SearchResult[] | null>(null);
+const queryTimeout = ref<number | null>(null);
 const isInputFocused = ref(false);
 
 const router = useRouter();
 
-const previewLocation = (searchResult) => {
+const previewLocation = (searchResult: SearchResult) => {
   const [city, state] = searchResult.place_name.split(",");
+
+  const formattedState = state.replace(/\s/g, '');
 
   router.push({
     name: "Location",
-    params: { state: state.replaceAll(" ", ""), city: city },
+    params: { state: formattedState, city: city.trim() },
     query: {
       lat: searchResult.geometry.coordinates[1],
       lon: searchResult.geometry.coordinates[0],
@@ -74,13 +83,16 @@ const previewLocation = (searchResult) => {
   searchQuery.value = "";
 };
 
+
 const getSearchResults = () => {
-  clearTimeout(queryTimeout.value);
+  if (queryTimeout.value !== null) {
+    clearTimeout(queryTimeout.value);
+  }
 
   queryTimeout.value = setTimeout(async () => {
     if (searchQuery.value !== "") {
       searchResults.value = await getLocations(searchQuery.value);
-
+      console.log(searchResults.value);
       return;
     }
 

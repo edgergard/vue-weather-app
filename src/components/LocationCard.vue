@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" v-if="weatherData">
+  <div v-if="weatherData" class="relative" >
     <div
       to="/"
       class="min-h-[400px] py-4 px-6 min-w-72 rounded-xl bg-opacity-0 text-[#FFF] shadow-2xl border border-[#FFF] border-opacity-30 hover:bg-[#804FB3] transition-all cursor-pointer"
@@ -76,15 +76,16 @@ import { useRouter } from "vue-router";
 import { defineProps, defineEmits, ref, onMounted, watch } from "vue";
 import { getWeatherData } from "../api/getWeatherData";
 import { Loader } from "../components";
+import { LocationType, WeatherData } from "../types";
 
-const props = defineProps({
-  location: Object,
-});
+const props = defineProps<{
+  location: LocationType;
+}>();
 
 const emit = defineEmits(["remove"]);
 
 const router = useRouter();
-const weatherData = ref(null);
+const weatherData = ref<WeatherData | null>(null);
 const refreshFlag = ref(false);
 
 const toggleRefresh = () => {
