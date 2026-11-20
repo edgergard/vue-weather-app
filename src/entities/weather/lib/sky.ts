@@ -27,22 +27,25 @@ export function dayPhase(now: number, sunrise: number, sunset: number): DayPhase
 
 type Palette = readonly [top: string, bottom: string]
 
-/** Clear-sky palettes. Every stop keeps at least 4.5:1 contrast with white text. */
+/**
+ * Clear-sky palettes, all in the app's signature violet.
+ * `day` is the original v1 gradient (#9969C7 → #804FB3); other phases are its variations.
+ */
 const CLEAR: Record<DayPhase, Palette> = {
-  dawn: ['#2c3470', '#a04d57'],
-  day: ['#174a8c', '#3a6fab'],
-  dusk: ['#221f52', '#96432f'],
-  night: ['#070f24', '#16244a'],
+  dawn: ['#8a5fc0', '#a95e98'],
+  day: ['#9969c7', '#804fb3'],
+  dusk: ['#5b3a96', '#87499a'],
+  night: ['#2a1a4a', '#3d2766'],
 }
 
-/** Overcast and precipitation replace the clear palette (twilight colour doesn't show through cloud). */
+/** Overcast and precipitation mute the violet (twilight colour doesn't show through cloud). */
 const WEATHER: Partial<Record<ConditionGroup, { light: Palette; dark: Palette }>> = {
-  cloudy: { light: ['#36475a', '#56657a'], dark: ['#0f141c', '#252d39'] },
-  fog: { light: ['#444e59', '#5f6873'], dark: ['#13171c', '#2a3036'] },
-  drizzle: { light: ['#314256', '#4d5d74'], dark: ['#0c1320', '#212b3d'] },
-  rain: { light: ['#26364a', '#405167'], dark: ['#090f1a', '#1b2536'] },
-  snow: { light: ['#3b5274', '#5a7090'], dark: ['#111a2b', '#2a3650'] },
-  storm: { light: ['#1d1f33', '#3b3452'], dark: ['#08080f', '#1f1a2e'] },
+  cloudy: { light: ['#7a6699', '#6a5689'], dark: ['#241c33', '#33284a'] },
+  fog: { light: ['#7e7392', '#6c6182'], dark: ['#26222e', '#363042'] },
+  drizzle: { light: ['#6f5a96', '#5f4b85'], dark: ['#1e1730', '#2d2345'] },
+  rain: { light: ['#5e4887', '#4e3a75'], dark: ['#18122a', '#271e3e'] },
+  snow: { light: ['#8572b0', '#72609f'], dark: ['#2a2340', '#3a3157'] },
+  storm: { light: ['#3f2a63', '#2e1f4a'], dark: ['#120b20', '#22163a'] },
 }
 
 const GLOW: Record<DayPhase, string> = {

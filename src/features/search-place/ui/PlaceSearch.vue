@@ -124,7 +124,7 @@ onKeyStroke('/', (e) => {
     >
       <div
         v-if="showPanel"
-        class="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl border border-line bg-[#0e1d36]/90 p-1.5 shadow-2xl shadow-black/30 backdrop-blur-xl"
+        class="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl border border-line bg-[#2a1745]/90 p-1.5 shadow-2xl shadow-black/30 backdrop-blur-xl"
       >
         <ul v-if="results.length" :id="listId" role="listbox" aria-label="Matching cities">
           <li

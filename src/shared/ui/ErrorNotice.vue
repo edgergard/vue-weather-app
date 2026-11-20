@@ -13,7 +13,7 @@ defineEmits<{ retry: [] }>()
     </div>
     <button
       type="button"
-      class="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-medium text-[#0e1d36] hover:bg-white/90"
+      class="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-medium text-[#2a1745] hover:bg-white/90"
       @click="$emit('retry')"
     >
       <RotateCw :size="16" aria-hidden="true" />

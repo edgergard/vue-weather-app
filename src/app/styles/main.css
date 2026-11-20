@@ -4,12 +4,12 @@
 @property --sky-top {
   syntax: '<color>';
   inherits: true;
-  initial-value: #174a8c;
+  initial-value: #9969c7;
 }
 @property --sky-bottom {
   syntax: '<color>';
   inherits: true;
-  initial-value: #3a6fab;
+  initial-value: #804fb3;
 }
 @property --sky-glow {
   syntax: '<color>';
@@ -21,9 +21,9 @@
   --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
 
-  /* Text on sky. Muted stays ≥ 4.5:1 on every sky palette. */
+  /* Text on sky. Muted is kept high so it stays readable on the lighter violets. */
   --color-ink: #ffffff;
-  --color-ink-muted: rgb(255 255 255 / 0.78);
+  --color-ink-muted: rgb(255 255 255 / 0.88);
   --color-ink-faint: rgb(255 255 255 / 0.5);
 
   /* Translucent layers that let the sky show through. */
@@ -43,7 +43,7 @@
 @layer base {
   html {
     color-scheme: dark;
-    background: #0b1a33;
+    background: #3d2766;
   }
 
   body {

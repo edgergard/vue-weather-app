@@ -34,7 +34,7 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
         }}</span>
         <WeatherIcon :code="day.code" :size="22" />
         <span
-          class="flex items-center gap-0.5 text-xs text-sky-200"
+          class="flex items-center gap-0.5 text-xs text-violet-100"
           :class="day.precipitationChance >= 20 ? '' : 'invisible'"
           :aria-hidden="day.precipitationChance < 20"
         >
@@ -44,12 +44,12 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
           <span class="w-9 text-right text-ink-muted">{{ fmt.temp(day.min) }}</span>
           <span class="relative h-1.5 flex-1 rounded-full bg-shade">
             <span
-              class="absolute inset-y-0 rounded-full bg-linear-to-r from-sky-300 to-sun"
+              class="absolute inset-y-0 rounded-full bg-linear-to-r from-violet-300 to-sun"
               :style="{ left: `${pct(day.min)}%`, right: `${100 - pct(day.max)}%` }"
             />
             <span
               v-if="i === 0"
-              class="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#0e1d36] bg-white"
+              class="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2a1745] bg-white"
               :style="{ left: `${pct(forecast.current.temperature)}%` }"
               aria-hidden="true"
             />

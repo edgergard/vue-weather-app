@@ -72,7 +72,7 @@ const style = computed(() =>
 
     <button
       type="button"
-      class="absolute -top-2 -right-2 grid size-8 place-items-center rounded-full border border-line bg-[#0e1d36] text-ink-muted opacity-100 shadow-lg transition-opacity hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+      class="absolute -top-2 -right-2 grid size-8 place-items-center rounded-full border border-line bg-[#2a1745] text-ink-muted opacity-100 shadow-lg transition-opacity hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
       :aria-label="`Remove ${place.name}`"
       @click="places.remove(place.id)"
     >

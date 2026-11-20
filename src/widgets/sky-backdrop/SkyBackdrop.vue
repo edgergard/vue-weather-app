@@ -47,7 +47,7 @@ const style = computed(() => ({
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+  background: linear-gradient(to right, var(--sky-top), var(--sky-bottom));
   transition:
     --sky-top 1.6s var(--ease-out-soft),
     --sky-bottom 1.6s var(--ease-out-soft),
