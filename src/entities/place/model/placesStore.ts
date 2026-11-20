@@ -31,11 +31,12 @@ function readLegacyPlaces(): Place[] {
 export const usePlacesStore = defineStore('places', () => {
   const places = useLocalStorage<Place[]>(STORAGE_KEYS.places, [])
 
-  const legacy = readLegacyPlaces()
-  if (legacy.length) {
-    const known = new Set(places.value.map((p) => p.id))
-    places.value = [...places.value, ...legacy.filter((p) => !known.has(p.id))]
-  }
+  // Re-normalise everything on load (fixes ids written by earlier builds) and fold in v1 places.
+  const seen = new Set<string>()
+  const normalised = [...places.value, ...readLegacyPlaces()]
+    .map((p) => createPlace(p))
+    .filter((p) => !seen.has(p.id) && seen.add(p.id))
+  if (JSON.stringify(normalised) !== JSON.stringify(places.value)) places.value = normalised
 
   const ids = computed(() => new Set(places.value.map((p) => p.id)))
 

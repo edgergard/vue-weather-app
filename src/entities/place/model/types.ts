@@ -8,10 +8,18 @@ export interface Place {
   lon: number
 }
 
+/**
+ * Coordinates are stored at the same precision the URL carries (4 decimals, ~11 m), so a place
+ * rebuilt from a link gets exactly the same id as the saved one.
+ */
+const round4 = (n: number) => Math.round(n * 1e4) / 1e4
+
 export function placeId(lat: number, lon: number): string {
-  return `${lat.toFixed(3)},${lon.toFixed(3)}`
+  return `${round4(lat).toFixed(4)},${round4(lon).toFixed(4)}`
 }
 
-export function createPlace(input: Omit<Place, 'id'>): Place {
-  return { ...input, id: placeId(input.lat, input.lon) }
+export function createPlace(input: Omit<Place, 'id'> & { id?: string }): Place {
+  const lat = round4(input.lat)
+  const lon = round4(input.lon)
+  return { name: input.name, region: input.region, lat, lon, id: placeId(lat, lon) }
 }

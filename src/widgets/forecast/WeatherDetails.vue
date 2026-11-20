@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Navigation } from 'lucide-vue-next'
-import type { Forecast } from '@/entities/weather'
+import { todayOf, type Forecast } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { compassPoint } from '@/shared/lib'
 
@@ -25,7 +25,7 @@ function humidityNote(h: number) {
 
 const items = computed(() => {
   const c = props.forecast.current
-  const uv = props.forecast.daily[0]?.uvIndex ?? 0
+  const uv = todayOf(props.forecast, c.time)?.uvIndex ?? 0
   return [
     {
       key: 'wind',

@@ -1,5 +1,5 @@
 import { localHour } from '@/shared/lib'
-import type { ConditionGroup, Forecast } from '../model/types'
+import type { ConditionGroup, DailyPoint, Forecast } from '../model/types'
 import { describeCode } from './conditions'
 
 export type DayPhase = 'night' | 'dawn' | 'day' | 'dusk'
@@ -60,8 +60,24 @@ const GLOW: Record<DayPhase, string> = {
   night: '#c9d6ff',
 }
 
+/**
+ * Index of the daily entry that covers `now`. Daily times are the place's local midnights, so
+ * this stays correct after midnight even if the cached forecast was fetched the day before.
+ */
+export function todayIndex(daily: readonly DailyPoint[], now: number): number {
+  let index = 0
+  for (let i = 0; i < daily.length; i++) {
+    if (daily[i]!.time <= now) index = i
+  }
+  return index
+}
+
+export function todayOf(forecast: Forecast, now: number): DailyPoint | undefined {
+  return forecast.daily[todayIndex(forecast.daily, now)]
+}
+
 function phaseOf(forecast: Forecast, now: number): { phase: DayPhase; sunProgress: number | null } {
-  const today = forecast.daily[0]
+  const today = todayOf(forecast, now)
   if (!today) {
     const hour = localHour(now, forecast.timezone)
     return { phase: hour >= 7 && hour < 19 ? 'day' : 'night', sunProgress: null }

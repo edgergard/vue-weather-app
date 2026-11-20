@@ -28,6 +28,7 @@ useTitle(computed(() => (place.value ? `${place.value.name} — Skyline` : 'Skyl
     class="mt-10"
     title="This link doesn't point to a place"
     detail="The coordinates in the address are missing or out of range. Search for a city instead."
+    action-label="Go to your places"
     @retry="$router.push({ name: 'home' })"
   />
 
@@ -36,7 +37,7 @@ useTitle(computed(() => (place.value ? `${place.value.name} — Skyline` : 'Skyl
     <div class="mt-10 flex flex-col gap-4 sm:mt-14">
       <HourlyChart :forecast="forecast" :now="now" />
       <div class="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
-        <DailyForecast :forecast="forecast" />
+        <DailyForecast :forecast="forecast" :now="now" />
         <WeatherDetails :forecast="forecast" />
       </div>
     </div>

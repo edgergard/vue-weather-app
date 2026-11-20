@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayPhase, skyFor } from './sky'
+import { dayPhase, skyFor, todayIndex } from './sky'
 import type { Forecast } from '../model/types'
 
 const SUNRISE = 1_000_000
@@ -48,6 +48,22 @@ describe('sky', () => {
   it('tracks the sun across the day', () => {
     expect(skyFor(forecast(0, SUNRISE + 5 * 3600)).sunProgress).toBeCloseTo(0.5)
     expect(skyFor(forecast(0, SUNSET + 3 * 3600)).sunProgress).toBeNull()
+  })
+
+  it('picks today by the local date of now, not the first daily entry', () => {
+    const DAY = 24 * 3600
+    const f = forecast(0, SUNRISE)
+    const tomorrow = {
+      ...f.daily[0]!,
+      time: SUNRISE + DAY,
+      sunrise: SUNRISE + DAY,
+      sunset: SUNSET + DAY,
+    }
+    f.daily.push(tomorrow)
+    expect(todayIndex(f.daily, SUNRISE + 3600)).toBe(0)
+    // After midnight the cached forecast's second entry is "today".
+    expect(todayIndex(f.daily, SUNRISE + DAY + 3600)).toBe(1)
+    expect(skyFor(f, SUNRISE + DAY + 5 * 3600).sunProgress).toBeCloseTo(0.5)
   })
 
   it('lets rain override the clear palette', () => {

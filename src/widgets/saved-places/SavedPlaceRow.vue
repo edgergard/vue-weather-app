@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { X } from 'lucide-vue-next'
 import { placeRoute, usePlacesStore, type Place } from '@/entities/place'
-import { describeCode, skyFor, useForecast, WeatherIcon } from '@/entities/weather'
+import { describeCode, skyFor, todayOf, useForecast, WeatherIcon } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { formatClock } from '@/shared/lib'
 import { useMinuteClock } from '@/shared/lib/useMinuteClock'
@@ -16,7 +16,7 @@ const now = useMinuteClock()
 const { data: forecast, isError, refetch } = useForecast(() => props.place)
 
 const sky = computed(() => (forecast.value ? skyFor(forecast.value, now.value) : null))
-const today = computed(() => forecast.value?.daily[0])
+const today = computed(() => forecast.value && todayOf(forecast.value, now.value))
 const condition = computed(() => forecast.value && describeCode(forecast.value.current.code))
 
 /** Each row is a slice of that place's own sky. */
@@ -59,20 +59,25 @@ const style = computed(() =>
           </p>
         </div>
       </template>
-      <button
-        v-else-if="isError"
-        type="button"
-        class="relative z-10 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-veil-strong"
-        @click.prevent="refetch()"
-      >
-        Retry
-      </button>
+      <span v-else-if="isError" class="w-20 text-sm text-ink-muted">Not loaded</span>
       <div v-else class="h-12 w-20 animate-pulse rounded-2xl bg-veil-strong" aria-label="Loading" />
     </RouterLink>
 
+    <!-- Outside the link: interactive elements must not be nested inside <a>. -->
+    <button
+      v-if="isError && !forecast"
+      type="button"
+      class="absolute top-1/2 right-5 -translate-y-1/2 rounded-full border border-line bg-[#2a1745] px-3 py-1.5 text-sm hover:bg-veil-strong sm:right-7"
+      :aria-label="`Retry loading ${place.name}`"
+      @click="refetch()"
+    >
+      Retry
+    </button>
+
+    <!-- Hidden until hover only where hovering is possible; always visible on touch screens. -->
     <button
       type="button"
-      class="absolute -top-2 -right-2 grid size-8 place-items-center rounded-full border border-line bg-[#2a1745] text-ink-muted opacity-100 shadow-lg transition-opacity hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+      class="absolute -top-2 -right-2 grid size-8 place-items-center rounded-full border border-line bg-[#2a1745] text-ink-muted shadow-lg transition-opacity hover:text-ink focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
       :aria-label="`Remove ${place.name}`"
       @click="places.remove(place.id)"
     >

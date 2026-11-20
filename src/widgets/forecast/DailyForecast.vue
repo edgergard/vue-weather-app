@@ -2,15 +2,18 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Droplet } from 'lucide-vue-next'
-import { describeCode, WeatherIcon, type Forecast } from '@/entities/weather'
+import { describeCode, todayIndex, WeatherIcon, type Forecast } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { formatWeekday } from '@/shared/lib'
 
-const props = defineProps<{ forecast: Forecast }>()
+const props = defineProps<{ forecast: Forecast; now: number }>()
 const { fmt } = storeToRefs(useSettingsStore())
 
+/** Starts at the place's current local day, so a forecast cached overnight never shows yesterday. */
+const days = computed(() => props.forecast.daily.slice(todayIndex(props.forecast.daily, props.now)))
+
 const bounds = computed(() => {
-  const d = props.forecast.daily
+  const d = days.value
   const min = Math.min(...d.map((x) => x.min))
   const max = Math.max(...d.map((x) => x.max))
   return { min, span: Math.max(1, max - min) }
@@ -21,10 +24,12 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
 
 <template>
   <section class="pane p-2 sm:p-3" aria-labelledby="daily-title">
-    <h2 id="daily-title" class="px-4 pt-3 pb-2 font-display text-lg font-medium">Next 10 days</h2>
+    <h2 id="daily-title" class="px-4 pt-3 pb-2 font-display text-lg font-medium">
+      Next {{ days.length }} days
+    </h2>
     <ul>
       <li
-        v-for="(day, i) in forecast.daily"
+        v-for="(day, i) in days"
         :key="day.time"
         class="grid grid-cols-[3rem_1.5rem_3rem_1fr] items-center gap-x-2.5 rounded-2xl px-3 py-2.5 sm:gap-x-3 sm:px-4 sm:grid-cols-[4rem_2rem_3rem_1fr]"
         :class="i === 0 ? 'bg-veil' : ''"

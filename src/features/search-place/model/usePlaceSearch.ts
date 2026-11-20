@@ -13,7 +13,7 @@ export function usePlaceSearch() {
   )
   const enabled = computed(() => debounced.value.length >= MIN_LENGTH)
 
-  const { data, isFetching, isError } = useQuery({
+  const { data, isFetching, isError, isPlaceholderData } = useQuery({
     queryKey: computed(() => ['places', debounced.value.toLowerCase()]),
     queryFn: ({ signal }) => searchPlaces(debounced.value, signal),
     enabled,
@@ -22,6 +22,11 @@ export function usePlaceSearch() {
   })
 
   const results = computed(() => (enabled.value ? (data.value ?? []) : []))
+  /**
+   * The list on screen belongs to an earlier query (debounce pending or placeholder data shown).
+   * It stays visible to avoid flicker, but must not be chosen with Enter.
+   */
+  const isStale = computed(() => debounced.value !== query.value.trim() || isPlaceholderData.value)
   /** True once a finished search came back empty — not while the user is still typing. */
   const isEmpty = computed(
     () =>
@@ -31,5 +36,5 @@ export function usePlaceSearch() {
       debounced.value === query.value.trim(),
   )
 
-  return { query, results, isFetching, isError, isEmpty }
+  return { query, results, isStale, isFetching, isError, isEmpty }
 }

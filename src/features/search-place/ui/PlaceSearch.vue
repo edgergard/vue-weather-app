@@ -8,7 +8,7 @@ import { useLocateMe } from '@/features/locate-me/useLocateMe'
 import { usePlaceSearch } from '../model/usePlaceSearch'
 
 const router = useRouter()
-const { query, results, isFetching, isError, isEmpty } = usePlaceSearch()
+const { query, results, isStale, isFetching, isError, isEmpty } = usePlaceSearch()
 const { locate, isLocating, error: locateError, isSupported: canLocate } = useLocateMe()
 
 const root = ref<HTMLElement>()
@@ -23,7 +23,20 @@ const showPanel = computed(
 
 watch(results, () => (active.value = results.value.length ? 0 : -1))
 
+/** Enter pressed while the list still shows an older query: act once fresh results arrive. */
+const enterPending = ref(false)
+watch([isStale, isFetching, results], () => {
+  if (!enterPending.value || isStale.value || isFetching.value) return
+  enterPending.value = false
+  const place = results.value[0]
+  if (place) choose(place)
+})
+watch(query, () => {
+  if (!query.value.trim()) enterPending.value = false
+})
+
 function choose(place: Place) {
+  enterPending.value = false
   query.value = ''
   isOpen.value = false
   input.value?.blur()
@@ -40,6 +53,10 @@ function onKeydown(e: KeyboardEvent) {
     e.preventDefault()
     active.value = (active.value - 1 + count) % count
   } else if (e.key === 'Enter') {
+    if (isStale.value || isFetching.value) {
+      enterPending.value = query.value.trim().length > 0
+      return
+    }
     const place = results.value[active.value]
     if (place) choose(place)
   } else if (e.key === 'Escape') {
@@ -126,7 +143,15 @@ onKeyStroke('/', (e) => {
         v-if="showPanel"
         class="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl border border-line bg-[#2a1745]/90 p-1.5 shadow-2xl shadow-black/30 backdrop-blur-xl"
       >
-        <ul v-if="results.length" :id="listId" role="listbox" aria-label="Matching cities">
+        <ul
+          v-if="results.length"
+          :id="listId"
+          role="listbox"
+          aria-label="Matching cities"
+          :aria-busy="isStale"
+          class="transition-opacity"
+          :class="isStale ? 'opacity-60' : ''"
+        >
           <li
             v-for="(place, i) in results"
             :id="`${listId}-${i}`"

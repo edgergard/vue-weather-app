@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { Place } from '@/entities/place'
-import { describeCode, WeatherIcon, type Forecast } from '@/entities/weather'
+import { describeCode, todayOf, WeatherIcon, type Forecast } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import SavePlaceButton from '@/features/save-place/SavePlaceButton.vue'
 import { formatClock, formatLongDate } from '@/shared/lib'
@@ -12,7 +12,7 @@ const props = defineProps<{ place: Place; forecast: Forecast; now: number }>()
 const { fmt } = storeToRefs(useSettingsStore())
 
 const current = computed(() => props.forecast.current)
-const today = computed(() => props.forecast.daily[0])
+const today = computed(() => todayOf(props.forecast, props.now))
 const condition = computed(() => describeCode(current.value.code))
 </script>
 
