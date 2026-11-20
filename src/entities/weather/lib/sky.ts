@@ -32,20 +32,25 @@ type Palette = readonly [top: string, bottom: string]
  * `day` is the original v1 gradient (#9969C7 → #804FB3); other phases are its variations.
  */
 const CLEAR: Record<DayPhase, Palette> = {
-  dawn: ['#8a5fc0', '#a95e98'],
+  dawn: ['#9a5fc4', '#c2588a'],
   day: ['#9969c7', '#804fb3'],
-  dusk: ['#5b3a96', '#87499a'],
-  night: ['#2a1a4a', '#3d2766'],
+  dusk: ['#6a3aa8', '#b04a72'],
+  night: ['#1f1240', '#3a2370'],
 }
 
-/** Overcast and precipitation mute the violet (twilight colour doesn't show through cloud). */
+/**
+ * Each kind of weather pulls the violet in its own direction, so it reads at a glance:
+ * cloud goes grey-lilac, rain goes indigo, snow goes lavender, storms go almost black.
+ * (Twilight colour doesn't show through cloud, so these replace the clear palette.)
+ */
 const WEATHER: Partial<Record<ConditionGroup, { light: Palette; dark: Palette }>> = {
-  cloudy: { light: ['#7a6699', '#6a5689'], dark: ['#241c33', '#33284a'] },
-  fog: { light: ['#7e7392', '#6c6182'], dark: ['#26222e', '#363042'] },
-  drizzle: { light: ['#6f5a96', '#5f4b85'], dark: ['#1e1730', '#2d2345'] },
-  rain: { light: ['#5e4887', '#4e3a75'], dark: ['#18122a', '#271e3e'] },
-  snow: { light: ['#8572b0', '#72609f'], dark: ['#2a2340', '#3a3157'] },
-  storm: { light: ['#3f2a63', '#2e1f4a'], dark: ['#120b20', '#22163a'] },
+  partly: { light: ['#8b6db8', '#7559a6'], dark: ['#231740', '#372a5c'] },
+  cloudy: { light: ['#7f7690', '#665e7b'], dark: ['#24212c', '#35303f'] },
+  fog: { light: ['#7f7a8d', '#696477'], dark: ['#2a2830', '#3b3842'] },
+  drizzle: { light: ['#6b68ab', '#535295'], dark: ['#19193a', '#2a2a52'] },
+  rain: { light: ['#4c4fa0', '#363a85'], dark: ['#10122e', '#1d2149'] },
+  snow: { light: ['#8574c0', '#6f60ae'], dark: ['#29274a', '#3b3966'] },
+  storm: { light: ['#2e1a4c', '#160c2a'], dark: ['#0d0718', '#1a0f2c'] },
 }
 
 const GLOW: Record<DayPhase, string> = {
