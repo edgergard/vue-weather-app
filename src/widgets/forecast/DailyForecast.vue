@@ -39,15 +39,18 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
         }}</span>
         <WeatherIcon :code="day.code" :size="22" />
         <span
-          class="flex items-center gap-0.5 text-xs text-violet-100"
+          class="flex items-center gap-0.5 text-xs text-ink"
           :class="day.precipitationChance >= 20 ? '' : 'invisible'"
           :aria-hidden="day.precipitationChance < 20"
         >
-          <Droplet :size="10" aria-hidden="true" />{{ day.precipitationChance }}%
+          <Droplet :size="10" aria-hidden="true" /><span class="sr-only">Chance of rain </span
+          >{{ day.precipitationChance }}%
         </span>
-        <span class="flex items-center gap-3">
-          <span class="w-9 text-right text-ink-muted">{{ fmt.temp(day.min) }}</span>
-          <span class="relative h-1.5 flex-1 rounded-full bg-shade">
+        <span class="flex items-center gap-2 sm:gap-3">
+          <span class="min-w-8 text-right text-ink-muted"
+            ><span class="sr-only">Low </span>{{ fmt.temp(day.min) }}</span
+          >
+          <span class="relative h-1.5 min-w-6 flex-1 rounded-full bg-shade" aria-hidden="true">
             <span
               class="absolute inset-y-0 rounded-full bg-linear-to-r from-violet-300 to-sun"
               :style="{ left: `${pct(day.min)}%`, right: `${100 - pct(day.max)}%` }"
@@ -59,7 +62,9 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
               aria-hidden="true"
             />
           </span>
-          <span class="w-9 font-medium">{{ fmt.temp(day.max) }}</span>
+          <span class="min-w-8 font-medium"
+            ><span class="sr-only">High </span>{{ fmt.temp(day.max) }}</span
+          >
           <span class="sr-only">{{ describeCode(day.code).label }}</span>
         </span>
       </li>
