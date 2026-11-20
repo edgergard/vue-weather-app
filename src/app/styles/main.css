@@ -4,7 +4,7 @@
 @property --sky-top {
   syntax: '<color>';
   inherits: true;
-  initial-value: #9969c7;
+  initial-value: #845aab;
 }
 @property --sky-bottom {
   syntax: '<color>';
@@ -21,14 +21,14 @@
   --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
 
-  /* Text on sky. Muted is kept high so it stays readable on the lighter violets. */
+  /* Text on sky. Every sky stop is dark enough for ink-muted to reach 4.5:1 (WCAG AA). */
   --color-ink: #ffffff;
-  --color-ink-muted: rgb(255 255 255 / 0.88);
+  --color-ink-muted: rgb(255 255 255 / 0.9);
   --color-ink-faint: rgb(255 255 255 / 0.5);
 
-  /* Translucent layers that let the sky show through. */
-  --color-veil: rgb(255 255 255 / 0.09);
-  --color-veil-strong: rgb(255 255 255 / 0.16);
+  /* Translucent layers that let the sky show through. Dark tints, so text on them only gains contrast. */
+  --color-veil: rgb(26 12 48 / 0.2);
+  --color-veil-strong: rgb(26 12 48 / 0.36);
   --color-shade: rgb(4 10 24 / 0.22);
   --color-line: rgb(255 255 255 / 0.16);
 
@@ -52,14 +52,37 @@
     font-feature-settings: 'tnum' 1;
   }
 
+  /* White ring with a dark inner halo: at least 3:1 against every sky, panel and white fill. */
   :focus-visible {
-    outline: 2px solid var(--color-sun);
-    outline-offset: 3px;
-    border-radius: 0.5rem;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #1a0f2c;
+  }
+
+  /* Headings and <main> receive focus only programmatically (after navigation); no ring there. */
+  [tabindex='-1']:focus {
+    outline: none;
+    box-shadow: none;
   }
 
   ::selection {
     background: rgb(255 217 138 / 0.4);
+  }
+
+  /* Tailwind v4's preflight resets buttons to the default cursor; anything clickable shows a hand. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='option'],
+  [role='radio'],
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  button[aria-disabled='true'],
+  [aria-disabled='true'] {
+    cursor: not-allowed;
   }
 }
 

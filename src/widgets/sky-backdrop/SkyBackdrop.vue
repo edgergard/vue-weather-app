@@ -8,12 +8,13 @@ const { sky } = storeToRefs(useSkyStore())
 /** The sun travels a shallow arc from left (sunrise) to right (sunset). */
 const orb = computed(() => {
   const p = sky.value.sunProgress
-  if (p === null) return { x: 82, y: 14, size: 34, opacity: 0.35 } // moon
+  if (p === null) return { x: 82, y: 14, size: 34, opacity: 0.3 } // moon
+  // Kept faint: a bright glow behind white text would push it under 4.5:1 contrast.
   return {
     x: 8 + p * 84,
     y: 46 - Math.sin(Math.PI * p) * 36,
     size: 60,
-    opacity: sky.value.group === 'clear' || sky.value.group === 'partly' ? 0.85 : 0.35,
+    opacity: sky.value.group === 'clear' || sky.value.group === 'partly' ? 0.45 : 0.25,
   }
 })
 
@@ -60,8 +61,8 @@ const style = computed(() => ({
   opacity: var(--orb-opacity);
   background: radial-gradient(
     circle var(--orb-size) at var(--orb-x) var(--orb-y),
-    color-mix(in oklab, var(--sky-glow) 70%, transparent) 0%,
-    color-mix(in oklab, var(--sky-glow) 18%, transparent) 30%,
+    color-mix(in oklab, var(--sky-glow) 22%, transparent) 0%,
+    color-mix(in oklab, var(--sky-glow) 8%, transparent) 30%,
     transparent 70%
   );
   transition: opacity 1.6s var(--ease-out-soft);

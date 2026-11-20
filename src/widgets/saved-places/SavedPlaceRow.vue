@@ -2,15 +2,16 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { X } from 'lucide-vue-next'
-import { placeRoute, usePlacesStore, type Place } from '@/entities/place'
+import { placeRoute, type Place } from '@/entities/place'
 import { describeCode, skyFor, todayOf, useForecast, WeatherIcon } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { formatClock } from '@/shared/lib'
 import { useMinuteClock } from '@/shared/lib/useMinuteClock'
 
 const props = defineProps<{ place: Place }>()
+/** The list owns removal so it can move focus to a neighbouring row afterwards. */
+defineEmits<{ remove: [] }>()
 
-const places = usePlacesStore()
 const { fmt } = storeToRefs(useSettingsStore())
 const now = useMinuteClock()
 const { data: forecast, isError, refetch } = useForecast(() => props.place)
@@ -22,7 +23,13 @@ const condition = computed(() => forecast.value && describeCode(forecast.value.c
 /** Each row is a slice of that place's own sky. */
 const style = computed(() =>
   sky.value
-    ? { backgroundImage: `linear-gradient(100deg, ${sky.value.top}, ${sky.value.bottom})` }
+    ? {
+        backgroundImage: `linear-gradient(100deg, ${sky.value.top}, ${sky.value.bottom})`,
+        // Paint the gradient under the border too. With the default padding-box origin it tiles,
+        // and the opposite end of the gradient shows as thin vertical lines along both edges.
+        backgroundOrigin: 'border-box',
+        backgroundRepeat: 'no-repeat',
+      }
     : undefined,
 )
 </script>
@@ -31,6 +38,7 @@ const style = computed(() =>
   <li class="group relative">
     <RouterLink
       :to="placeRoute(place)"
+      :data-place-id="place.id"
       class="flex min-h-28 items-center gap-4 overflow-hidden rounded-pane border border-line bg-veil px-5 py-4 transition-[transform,border-color] duration-300 ease-out-soft hover:border-white/35 sm:gap-6 sm:px-7"
       :style="style"
     >
@@ -55,12 +63,17 @@ const style = computed(() =>
             {{ fmt.temp(forecast.current.temperature) }}
           </p>
           <p v-if="today" class="mt-1 text-sm text-ink-muted">
-            {{ fmt.temp(today.max) }} / {{ fmt.temp(today.min) }}
+            <span class="sr-only">High </span>{{ fmt.temp(today.max) }}
+            <span aria-hidden="true" class="mx-1">/</span>
+            <span class="sr-only">, low </span>{{ fmt.temp(today.min) }}
           </p>
         </div>
       </template>
       <span v-else-if="isError" class="w-20 text-sm text-ink-muted">Not loaded</span>
-      <div v-else class="h-12 w-20 animate-pulse rounded-2xl bg-veil-strong" aria-label="Loading" />
+      <template v-else>
+        <span class="h-12 w-20 animate-pulse rounded-2xl bg-veil-strong" aria-hidden="true" />
+        <span class="sr-only">Loading weather</span>
+      </template>
     </RouterLink>
 
     <!-- Outside the link: interactive elements must not be nested inside <a>. -->
@@ -79,9 +92,9 @@ const style = computed(() =>
       type="button"
       class="absolute -top-2 -right-2 grid size-8 place-items-center rounded-full border border-line bg-[#2a1745] text-ink-muted shadow-lg transition-opacity hover:text-ink focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
       :aria-label="`Remove ${place.name}`"
-      @click="places.remove(place.id)"
+      @click="$emit('remove')"
     >
-      <X :size="16" />
+      <X :size="16" aria-hidden="true" />
     </button>
   </li>
 </template>

@@ -29,12 +29,13 @@ type Palette = readonly [top: string, bottom: string]
 
 /**
  * Clear-sky palettes, all in the app's signature violet.
- * `day` is the original v1 gradient (#9969C7 → #804FB3); other phases are its variations.
+ * `day` keeps the v1 gradient end (#804FB3); its start is the v1 #9969C7 darkened just enough for
+ * WCAG AA text contrast (#845AAB). Other phases are variations of it.
  */
 const CLEAR: Record<DayPhase, Palette> = {
-  dawn: ['#9a5fc4', '#c2588a'],
-  day: ['#9969c7', '#804fb3'],
-  dusk: ['#6a3aa8', '#b04a72'],
+  dawn: ['#8b55b0', '#a94d78'],
+  day: ['#845aab', '#804fb3'],
+  dusk: ['#6a3aa8', '#ae4971'],
   night: ['#1f1240', '#3a2370'],
 }
 
@@ -44,12 +45,12 @@ const CLEAR: Record<DayPhase, Palette> = {
  * (Twilight colour doesn't show through cloud, so these replace the clear palette.)
  */
 const WEATHER: Partial<Record<ConditionGroup, { light: Palette; dark: Palette }>> = {
-  partly: { light: ['#8b6db8', '#7559a6'], dark: ['#231740', '#372a5c'] },
-  cloudy: { light: ['#7f7690', '#665e7b'], dark: ['#24212c', '#35303f'] },
-  fog: { light: ['#7f7a8d', '#696477'], dark: ['#2a2830', '#3b3842'] },
-  drizzle: { light: ['#6b68ab', '#535295'], dark: ['#19193a', '#2a2a52'] },
+  partly: { light: ['#7a60a2', '#7559a6'], dark: ['#231740', '#372a5c'] },
+  cloudy: { light: ['#716980', '#665e7b'], dark: ['#24212c', '#35303f'] },
+  fog: { light: ['#6f6b7b', '#696477'], dark: ['#2a2830', '#3b3842'] },
+  drizzle: { light: ['#6865a7', '#535295'], dark: ['#19193a', '#2a2a52'] },
   rain: { light: ['#4c4fa0', '#363a85'], dark: ['#10122e', '#1d2149'] },
-  snow: { light: ['#8574c0', '#6f60ae'], dark: ['#29274a', '#3b3966'] },
+  snow: { light: ['#7263a4', '#6f60ae'], dark: ['#29274a', '#3b3966'] },
   storm: { light: ['#2e1a4c', '#160c2a'], dark: ['#0d0718', '#1a0f2c'] },
 }
 

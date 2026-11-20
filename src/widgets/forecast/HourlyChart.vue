@@ -61,8 +61,9 @@ const width = computed(() => hours.value.length * COL)
     </h2>
     <div
       class="scrollbar-none overflow-x-auto px-3 pt-3 pb-5 sm:px-4"
+      role="region"
       tabindex="0"
-      aria-label="Hourly forecast, scrollable"
+      aria-label="Next 24 hours, scrolls sideways"
     >
       <div class="relative" :style="{ width: `${width}px` }">
         <ol class="flex">
@@ -78,10 +79,11 @@ const width = computed(() => hours.value.length * COL)
             <span :style="{ height: `${CHART_H - points[i]!.y + 4}px` }" aria-hidden="true" />
             <WeatherIcon :code="h.code" :is-day="h.isDay" :size="22" class="mt-3" />
             <span
-              class="mt-1.5 flex h-4 items-center gap-0.5 text-xs text-violet-100"
+              class="mt-1.5 flex h-4 items-center gap-0.5 text-xs text-ink"
               :class="h.precipitationChance >= 20 ? '' : 'invisible'"
             >
-              <Droplet :size="10" aria-hidden="true" />{{ h.precipitationChance }}%
+              <Droplet :size="10" aria-hidden="true" /><span class="sr-only">Chance of rain </span
+              >{{ h.precipitationChance }}%
             </span>
             <span class="mt-1.5 text-sm text-ink-muted">
               {{ i === 0 ? 'Now' : formatHour(h.time, forecast.timezone) }}
