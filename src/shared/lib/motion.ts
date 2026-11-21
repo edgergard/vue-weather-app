@@ -58,19 +58,21 @@ export function useMotion(scope: Ref<HTMLElement | undefined>, setup: MotionSetu
 export const ambientPaused = useLocalStorage('skyline:ambient-paused', false)
 
 /**
- * Set by a page that covers the sky with something animating on its own (the globe): the sky's
- * loops hold still meanwhile, to leave the frame budget to that page. Not saved, and separate
- * from the user's choice above, which it never changes.
+ * How many mounted components cover the sky with something animating on their own (the globe):
+ * while any do, the sky's loops hold still, to leave the frame budget to them. Not saved, and
+ * separate from the user's choice above, which it never changes. A count, not a flag, so one
+ * leaving can't resume the sky under another that is still there.
  */
-export const ambientSuspended = ref(false)
+const suspenders = ref(0)
+export const ambientSuspended = computed(() => suspenders.value > 0)
 
 /** The ambient loops should hold still: the user paused them, or the page suspended them. */
 export const ambientStill = computed(() => ambientPaused.value || ambientSuspended.value)
 
 /** Suspends the sky's ambient loops while the calling component is mounted. */
 export function useSuspendAmbient() {
-  onMounted(() => (ambientSuspended.value = true))
-  onBeforeUnmount(() => (ambientSuspended.value = false))
+  onMounted(() => suspenders.value++)
+  onBeforeUnmount(() => suspenders.value--)
 }
 
 /**

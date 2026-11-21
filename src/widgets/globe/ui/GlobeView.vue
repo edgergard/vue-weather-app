@@ -27,10 +27,12 @@ import ErrorNotice from '@/shared/ui/ErrorNotice.vue'
 import { motionAllowed, useSuspendAmbient } from '@/shared/lib/motion'
 import {
   cameraDistance,
+  cosBetween,
   cullMargin,
   DEFAULT_FOV,
   globeRadius,
   overlayFade,
+  preparePoint,
   restingOutline,
   restingZoom,
   silhouetteRadius,
@@ -62,16 +64,11 @@ const START = { lng: 24, lat: 30 }
 const MAX_PIXEL_RATIO = 1.5
 /** Marks the camera jumps made by the auto-spin, so 'moveend' handlers can skip them. */
 const SPIN_EVENT = { autoSpin: true } as const
-const RAD = Math.PI / 180
 
 const cities = GLOBE_CITIES
 const coords = cities.map((c) => ({ lat: c.lat, lon: c.lon }))
 /** Per-city trigonometry, computed once: culling runs on every frame of the spin. */
-const cityTrig = cities.map((c) => ({
-  sinLat: Math.sin(c.lat * RAD),
-  cosLat: Math.cos(c.lat * RAD),
-  lon: c.lon * RAD,
-}))
+const cityPoints = cities.map((c) => preparePoint({ lng: c.lon, lat: c.lat }))
 
 const { fmt } = storeToRefs(useSettingsStore())
 const { data: snapshots } = useCurrentWeatherMany(coords)
@@ -101,6 +98,8 @@ const hidden = cities.map(() => true)
 const size = { width: 0, height: 0 }
 /** The camera state the halo was last painted for; the spin changes only the longitude. */
 let painted = { zoom: NaN, lat: NaN, width: NaN, height: NaN }
+/** Culling thresholds for one camera zoom/latitude/size; unchanged while the globe spins. */
+let cullAt = { zoom: NaN, lat: NaN, width: NaN, height: NaN, margin: 0, checkBounds: false }
 let map: MapLibreMap | null = null
 let markers: MapLibreMarker[] = []
 let disposed = false
@@ -206,19 +205,25 @@ function cull() {
   const center = map.getCenter()
   const zoom = map.getZoom()
   const { width: w, height: h } = size
-  // Hide at the real horizon (it moves closer as the camera zooms in), where MapLibre makes the
-  // marker transparent, so an invisible marker is never clickable, focusable or announced.
-  const margin = cullMargin(globeRadius(zoom, center.lat), cameraDistance(h, fov()))
-  // At rest the whole sphere fits on the stage; only a zoomed-in globe can put a city off screen.
-  const checkBounds = zoom > restZoomAt(center.lat) + 0.05
-  const sinC = Math.sin(center.lat * RAD)
-  const cosC = Math.cos(center.lat * RAD)
-  const lonC = center.lng * RAD
+  const c = cullAt
+  if (c.zoom !== zoom || c.lat !== center.lat || c.width !== w || c.height !== h) {
+    cullAt = {
+      zoom,
+      lat: center.lat,
+      width: w,
+      height: h,
+      // Hide at the real horizon (it moves closer as the camera zooms in), where MapLibre makes
+      // the marker transparent, so an invisible marker is never clickable, focusable or announced.
+      margin: cullMargin(globeRadius(zoom, center.lat), cameraDistance(h, fov())),
+      // At rest the whole sphere fits on the stage; only a zoomed-in globe puts a city off screen.
+      checkBounds: zoom > restZoomAt(center.lat) + 0.05,
+    }
+  }
+  const { margin, checkBounds } = cullAt
+  const from = preparePoint(center)
   let focusLost = false
   for (let i = 0; i < cities.length; i++) {
-    const t = cityTrig[i]!
-    // cosAngle() from geometry.ts, with the city's half precomputed.
-    let hide = sinC * t.sinLat + cosC * t.cosLat * Math.cos(t.lon - lonC) < margin
+    let hide = cosBetween(from, cityPoints[i]!) < margin
     if (!hide && checkBounds) {
       const city = cities[i]!
       const p = map.project([city.lon, city.lat])

@@ -34,10 +34,24 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
  * point, 0 on the horizon (the visible edge of the sphere), negative on the far side.
  */
 export function cosAngle(a: LngLatLite, b: LngLatLite): number {
-  return (
-    Math.sin(a.lat * RAD) * Math.sin(b.lat * RAD) +
-    Math.cos(a.lat * RAD) * Math.cos(b.lat * RAD) * Math.cos((b.lng - a.lng) * RAD)
-  )
+  return cosBetween(preparePoint(a), preparePoint(b))
+}
+
+/** A point's trigonometry, computed once for points that are compared on every frame. */
+export interface PreparedPoint {
+  sinLat: number
+  cosLat: number
+  /** Longitude in radians. */
+  lng: number
+}
+
+export function preparePoint({ lng, lat }: LngLatLite): PreparedPoint {
+  return { sinLat: Math.sin(lat * RAD), cosLat: Math.cos(lat * RAD), lng: lng * RAD }
+}
+
+/** cosAngle() for prepared points: one cosine per call. */
+export function cosBetween(a: PreparedPoint, b: PreparedPoint): number {
+  return a.sinLat * b.sinLat + a.cosLat * b.cosLat * Math.cos(b.lng - a.lng)
 }
 
 /**
@@ -45,10 +59,6 @@ export function cosAngle(a: LngLatLite, b: LngLatLite): number {
  * squashed against the rim and overlap each other.
  */
 export const LIMB_MARGIN = 0.12
-
-export function isOnFarSide(center: LngLatLite, point: LngLatLite, margin = LIMB_MARGIN): boolean {
-  return cosAngle(center, point) < margin
-}
 
 const latScale = (lat: number) => Math.cos(Math.min(Math.abs(lat), MAX_LAT) * RAD)
 

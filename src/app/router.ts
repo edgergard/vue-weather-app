@@ -18,7 +18,7 @@ export const router = createRouter({
       component: () => import('@/pages/GlobePage.vue'),
       meta: { fullBleed: true },
     },
-    { path: '/places', name: 'places', component: () => import('@/pages/HomePage.vue') },
+    { path: '/places', name: 'places', component: () => import('@/pages/PlacesPage.vue') },
     {
       path: '/forecast/:lat/:lon',
       name: 'forecast',

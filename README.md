@@ -45,7 +45,7 @@ only import from layers below it.
 ```
 src/
   app/        bootstrap: main.ts, router, global styles, App shell
-  pages/      route screens: HomePage, ForecastPage, GlobePage
+  pages/      route screens: GlobePage, PlacesPage, ForecastPage
   widgets/    composed UI blocks: header, sky backdrop, saved places, forecast sections, globe
   features/   user actions: search a place, locate me, save a place, switch units
   entities/   domain: weather (API, mapping, conditions, sky), place (API, store, routes), settings
