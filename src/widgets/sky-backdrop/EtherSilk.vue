@@ -11,10 +11,16 @@ import { ambientPaused, gsap, motionAllowed, useAmbientMotion } from '@/shared/l
  * Contrast rule (white text must stay ≥ 4.5:1):
  * - On light and mid skies the silk shimmers in hue only. ISO colours all share one luminance,
  *   a little below the lightest sky (white on each ≈ 6:1), so blending them in can't wash text out.
- * - On dark night skies there is plenty of headroom, so the patches really glow (screen blend).
+ * - On dark skies the patches glow (screen blend), violet to magenta only, at GLOW_ALPHA each.
+ *   Even with all four glow patches stacked on one spot, the worst dark sky (snow at night)
+ *   keeps white text at 6.0:1 and white/.9 at 5.2:1.
  * The two styles crossfade as the sky changes.
  */
-const ISO = ['#8d34cc', '#a629a6', '#b02c79', '#2c62af', '#1f6c7c']
+const ISO = ['#8d34cc', '#a629a6', '#b02c79', '#2c62af', '#1f6c7c'].map((hex) => {
+  const n = parseInt(hex.slice(1), 16)
+  return [n >> 16, (n >> 8) & 255, n & 255] as const
+})
+const GLOW_ALPHA = 0.1
 /** Canvas pixels per CSS pixel. Soft blobs need no detail; half resolution is 4× cheaper. */
 const RES = 0.5
 
@@ -34,9 +40,15 @@ const luminance = (hex: string) => {
   return 0.2126 * ch(n >> 16) + 0.7152 * ch((n >> 8) & 255) + 0.0722 * ch(n & 255)
 }
 const isDarkSky = (top: string, bottom: string) => luminance(top) < 0.05 && luminance(bottom) < 0.08
-const rgba = (hex: string, a: number) => {
-  const n = parseInt(hex.slice(1), 16)
-  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
+/** ISO colour at a fractional position, blended with its neighbour so hue flows, never jumps. */
+function isoAt(t: number, a: number) {
+  const i = ((Math.floor(t) % ISO.length) + ISO.length) % ISO.length
+  const f = t - Math.floor(t)
+  const e = f * f * (3 - 2 * f) // smoothstep, so each colour lingers a moment
+  const p = ISO[i]!
+  const q = ISO[(i + 1) % ISO.length]!
+  const c = p.map((v, j) => Math.round(v + (q[j]! - v) * e))
+  return `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`
 }
 
 /** Everything the frame reads; GSAP tweens these values. */
@@ -53,10 +65,9 @@ const blobs = Array.from({ length: 5 }, (_, i) => ({
   r: [0.6, 0.55, 0.5, 0.65, 0.55][i]!,
 }))
 
-/** Pearlescent hue for glow mode: violet → magenta, with a dip to teal; never warm. */
+/** Pearlescent hue for glow mode: a smooth swing between violet (255°) and magenta (315°). */
 function pearl(deg: number) {
-  const x = (Math.sin((deg * Math.PI) / 180) + 1) / 2
-  return 255 + x * 70 + (x > 0.85 ? -110 : 0)
+  return 285 + Math.sin((deg * Math.PI) / 180) * 30
 }
 
 function draw() {
@@ -92,11 +103,10 @@ function draw() {
       return
     }
     if (state.glow < 1) {
-      const c =
-        ISO[((Math.floor(state.tone / 72 + k * 1.4) % ISO.length) + ISO.length) % ISO.length]!
+      const t = state.tone / 72 + k * 1.4
       const g = ctx!.createRadialGradient(x, y, 0, x, y, r)
-      g.addColorStop(0, rgba(c, 1))
-      g.addColorStop(1, rgba(c, 0))
+      g.addColorStop(0, isoAt(t, 1))
+      g.addColorStop(1, isoAt(t, 0))
       ctx!.globalCompositeOperation = 'source-over'
       ctx!.globalAlpha = 0.45 * (1 - state.glow)
       ctx!.fillStyle = g
@@ -108,7 +118,7 @@ function draw() {
       g.addColorStop(0, `hsla(${hue}, 70%, 62%, 1)`)
       g.addColorStop(1, `hsla(${hue}, 70%, 62%, 0)`)
       ctx!.globalCompositeOperation = 'screen'
-      ctx!.globalAlpha = 0.2 * state.glow
+      ctx!.globalAlpha = GLOW_ALPHA * state.glow
       ctx!.fillStyle = g
       ctx!.fillRect(0, 0, w, h)
     }
@@ -152,19 +162,27 @@ watch(sky, (next) => {
       onUpdate: () => void (dirty = true),
     })
   } else {
+    // A blend may still be running from before reduced motion was turned on; stop it first.
+    gsap.killTweensOf(state, 'top,bottom,glow')
     Object.assign(state, target)
     dirty = true
   }
 })
 
+// Turning "reduce motion" on reverts the drift; redraw once it has, so the still frame is current.
+const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+const onMotionPreference = () => queueMicrotask(() => void (dirty = true))
+
 onMounted(() => {
   ctx = (canvas.value as HTMLCanvasElement | undefined)?.getContext('2d') ?? null
   resize()
   window.addEventListener('resize', resize)
+  reducedQuery.addEventListener('change', onMotionPreference)
   gsap.ticker.add(frame)
 })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resize)
+  reducedQuery.removeEventListener('change', onMotionPreference)
   gsap.ticker.remove(frame)
 })
 
