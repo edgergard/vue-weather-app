@@ -43,7 +43,7 @@ useTitle(computed(() => (place.value ? `${place.value.name} — Skyline` : 'Skyl
       title="This link doesn't point to a place"
       detail="The coordinates in the address are missing or out of range. Search for a city instead."
       action-label="Go to your places"
-      @retry="$router.push({ name: 'home' })"
+      @retry="$router.push({ name: 'places' })"
     />
 
     <template v-else-if="forecast">

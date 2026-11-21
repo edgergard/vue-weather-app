@@ -18,10 +18,10 @@ with the sun tracking its actual position between sunrise and sunset.
 - "Use my location" via the browser Geolocation API
 - Current conditions, 24-hour temperature curve, 10-day forecast with temperature ranges, details
   (wind, humidity, UV, pressure, visibility, precipitation), sunrise/sunset arc
-- Saved places with live temperatures, persisted in `localStorage` (places saved by v1 are migrated)
+- Saved places (`#/places`) with live temperatures, persisted in `localStorage` (places saved by v1 are migrated)
 - °C / °F switch (defaults from the browser locale)
 - Shareable URLs: `#/forecast/:lat/:lon?name=…`
-- Globe (`#/globe`): spin a 3D globe, pick one of ~40 cities (live temperatures for all of them
+- Globe (the start page): spin a 3D globe, pick one of ~40 cities (live temperatures for all of them
   come from a single Open-Meteo request) or zoom in and click any town's name, then open its
   forecast. The map uses our own compact "Amethyst" style on OpenFreeMap tiles, and the required
   credits (OpenFreeMap, OpenMapTiles, OpenStreetMap contributors) stay visible on the map. City

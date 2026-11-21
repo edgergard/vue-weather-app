@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomePage from '@/pages/HomePage.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -12,25 +11,27 @@ declare module 'vue-router' {
 export const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', name: 'home', component: HomePage },
+    {
+      // The globe is the start page. The map engine (MapLibre) is loaded only here.
+      path: '/',
+      name: 'globe',
+      component: () => import('@/pages/GlobePage.vue'),
+      meta: { fullBleed: true },
+    },
+    { path: '/places', name: 'places', component: () => import('@/pages/HomePage.vue') },
     {
       path: '/forecast/:lat/:lon',
       name: 'forecast',
       component: () => import('@/pages/ForecastPage.vue'),
     },
-    {
-      // The map engine (MapLibre) is loaded only here.
-      path: '/globe',
-      name: 'globe',
-      component: () => import('@/pages/GlobePage.vue'),
-      meta: { fullBleed: true },
-    },
+    // Links shared while the globe lived at #/globe.
+    { path: '/globe', redirect: { name: 'globe' } },
     {
       // v1 links: #/location/:state/:city?lat=..&lon=.. — keep old bookmarks working.
       path: '/location/:state/:city',
       redirect: (to) => {
         const { lat, lon } = to.query
-        if (typeof lat !== 'string' || typeof lon !== 'string') return { name: 'home' }
+        if (typeof lat !== 'string' || typeof lon !== 'string') return { name: 'globe' }
         return {
           name: 'forecast',
           params: { lat, lon },
@@ -38,7 +39,7 @@ export const router = createRouter({
         }
       },
     },
-    { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
+    { path: '/:pathMatch(.*)*', redirect: { name: 'globe' } },
   ],
   scrollBehavior: () => ({ top: 0 }),
 })

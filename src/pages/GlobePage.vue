@@ -11,7 +11,7 @@ import { usePageFocus } from '@/shared/lib/focus'
 useTitle('Globe — Skyline')
 usePageFocus()
 
-// Same sky as the home page (the first saved place), so the backdrop doesn't jump between them.
+// Same sky as the places page (the first saved place), so the backdrop doesn't jump between them.
 const { places } = storeToRefs(usePlacesStore())
 const skyStore = useSkyStore()
 const now = useMinuteClock()
