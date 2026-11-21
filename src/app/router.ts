@@ -1,6 +1,13 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomePage from '@/pages/HomePage.vue'
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** The page spans the full window width instead of the centred content column. */
+    fullBleed?: boolean
+  }
+}
+
 // Hash history keeps deep links working on GitHub Pages, which has no SPA fallback.
 export const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -10,6 +17,13 @@ export const router = createRouter({
       path: '/forecast/:lat/:lon',
       name: 'forecast',
       component: () => import('@/pages/ForecastPage.vue'),
+    },
+    {
+      // The map engine (MapLibre) is loaded only here.
+      path: '/globe',
+      name: 'globe',
+      component: () => import('@/pages/GlobePage.vue'),
+      meta: { fullBleed: true },
     },
     {
       // v1 links: #/location/:state/:city?lat=..&lon=.. — keep old bookmarks working.
