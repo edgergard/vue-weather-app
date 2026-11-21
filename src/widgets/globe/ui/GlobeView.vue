@@ -44,7 +44,7 @@ import {
 import { buildGlobeStyle, PLACE_LABEL_LAYERS, SOURCE } from '../lib/globeStyle'
 import { placeFromFeature, regionWithout } from '../lib/placeFeature'
 import { useAutoSpin } from '../model/useAutoSpin'
-import { createTileRetry, type TileId } from '../model/tileRetry'
+import { createTileRetry, tileIdOf } from '../model/tileRetry'
 import GlobeCityCard, { type GlobeCardPlace } from './GlobeCityCard.vue'
 import GlobeAttribution from './GlobeAttribution.vue'
 
@@ -450,25 +450,18 @@ async function init() {
     if (!e.tile) return
     tilesLoaded = true
     tilesFailed.value = false
-    const id = tileIdOf(e)
+    const id = tileIdOf(e, SOURCE)
     if (id) tileRetry.loaded(id)
   })
   // Tiles or fonts failing is not fatal: the globe, markers and cards keep working, and failed
   // tiles are fetched again.
   map.on('error', (e) => {
     if (import.meta.env.DEV) console.warn('Globe:', e.error)
-    const id = tileIdOf(e)
+    const id = tileIdOf(e, SOURCE)
     if (id) tileRetry.failed(id)
     if (!tilesLoaded) tilesFailed.value = true
   })
   fit()
-}
-
-/** The tile an event is about, when it is one of our map tiles. */
-function tileIdOf(e: unknown): TileId | null {
-  const ev = e as { sourceId?: string; tile?: { tileID?: { canonical?: TileId } } }
-  const c = ev.sourceId === SOURCE ? ev.tile?.tileID?.canonical : undefined
-  return c ? { x: c.x, y: c.y, z: c.z } : null
 }
 
 function fail(kind: 'webgl' | 'network') {
