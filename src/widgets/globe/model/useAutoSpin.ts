@@ -2,6 +2,9 @@ import { computed, onBeforeUnmount, ref, toValue, watch, type MaybeRefOrGetter }
 import { useDocumentVisibility, useMediaQuery, useRafFn } from '@vueuse/core'
 import { ambientPaused, MOTION_OK, motionAllowed } from '@/shared/lib/motion'
 
+/** Shortest step between two spin updates: lets every 60 Hz frame through, halves 120 Hz. */
+const MIN_STEP_MS = 12
+
 interface AutoSpinOptions {
   /** Whether the globe may spin at all right now (map ready, no card open, not zoomed in…). */
   enabled: MaybeRefOrGetter<boolean>
@@ -39,10 +42,29 @@ export function useAutoSpin({ enabled, onFrame, idleMs = 4000 }: AutoSpinOptions
       visibility.value === 'visible',
   )
 
-  const raf = useRafFn(({ delta }) => onFrame(Math.min(64, Math.max(0, delta))), {
-    immediate: false,
-  })
-  watch(running, (on) => (on ? raf.resume() : raf.pause()), { immediate: true })
+  // About 60 steps a second at most: on 120/144 Hz screens the spin would otherwise redraw the
+  // whole globe twice as often for no visible gain. Frames closer than MIN_STEP_MS are merged into
+  // the next one (not dropped against a hard 16.7 ms line, which jittery or rounded rAF timestamps
+  // would cross at random), and the step is real elapsed time, so the speed never changes.
+  let pending = 0
+  const raf = useRafFn(
+    ({ delta }) => {
+      pending += Math.max(0, delta)
+      if (pending < MIN_STEP_MS) return
+      onFrame(Math.min(100, pending))
+      pending = 0
+    },
+    { immediate: false },
+  )
+  watch(
+    running,
+    (on) => {
+      pending = 0
+      if (on) raf.resume()
+      else raf.pause()
+    },
+    { immediate: true },
+  )
 
   onBeforeUnmount(() => {
     clearTimeout(timer)

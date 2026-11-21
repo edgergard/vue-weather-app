@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, readonly, ref, watch, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, readonly, ref, watch, type Ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { gsap } from 'gsap'
 import { SplitText } from 'gsap/SplitText'
@@ -58,8 +58,24 @@ export function useMotion(scope: Ref<HTMLElement | undefined>, setup: MotionSetu
 export const ambientPaused = useLocalStorage('skyline:ambient-paused', false)
 
 /**
+ * Set by a page that covers the sky with something animating on its own (the globe): the sky's
+ * loops hold still meanwhile, to leave the frame budget to that page. Not saved, and separate
+ * from the user's choice above, which it never changes.
+ */
+export const ambientSuspended = ref(false)
+
+/** The ambient loops should hold still: the user paused them, or the page suspended them. */
+export const ambientStill = computed(() => ambientPaused.value || ambientSuspended.value)
+
+/** Suspends the sky's ambient loops while the calling component is mounted. */
+export function useSuspendAmbient() {
+  onMounted(() => (ambientSuspended.value = true))
+  onBeforeUnmount(() => (ambientSuspended.value = false))
+}
+
+/**
  * Like useMotion, for looping ambient animation: everything it creates freezes while
- * `ambientPaused` is on and picks up again when it is turned off.
+ * `ambientStill` is on and picks up again when it is turned off.
  */
 export function useAmbientMotion(scope: Ref<HTMLElement | undefined>, setup: MotionSetup) {
   // Pause only top-level animations: pausing a timeline freezes its children with it, so loops
@@ -76,10 +92,10 @@ export function useAmbientMotion(scope: Ref<HTMLElement | undefined>, setup: Mot
   const mm = useMotion(scope, (el) => {
     const cleanup = setup(el)
     // Animations exist only after setup has run, so honour a saved "paused" choice right away.
-    queueMicrotask(() => apply(ambientPaused.value))
+    queueMicrotask(() => apply(ambientStill.value))
     return cleanup
   })
-  watch(ambientPaused, apply)
+  watch(ambientStill, apply)
   return mm
 }
 

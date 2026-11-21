@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSkyStore } from '@/entities/weather'
-import { ambientPaused, gsap, motionAllowed, useAmbientMotion } from '@/shared/lib/motion'
+import { ambientStill, gsap, motionAllowed, useAmbientMotion } from '@/shared/lib/motion'
 
 /**
  * "Liquid silk": the sky gradient with large soft patches of light sliding over each other and
@@ -128,7 +128,7 @@ function draw() {
 }
 
 /** Draw every frame while animating; otherwise only when something changed (sky, size). */
-const animating = () => motionAllowed() && !ambientPaused.value
+const animating = () => motionAllowed() && !ambientStill.value
 function frame() {
   if (dirty || animating()) {
     dirty = false
@@ -189,7 +189,8 @@ onBeforeUnmount(() => {
   gsap.ticker.remove(frame)
 })
 
-// Endless drift and hue cycle; frozen by the Pause button, skipped under reduced motion.
+// Endless drift and hue cycle; frozen by the Pause button (or a page that suspends the sky),
+// skipped under reduced motion.
 useAmbientMotion(canvas, () => {
   gsap.to(state, { angle: 1.6, duration: 26, ease: 'sine.inOut', repeat: -1, yoyo: true })
   gsap.to(state, { tone: 360, duration: 30, ease: 'none', repeat: -1 })
@@ -207,7 +208,7 @@ useAmbientMotion(canvas, () => {
   )
 })
 // When animation stops (pause / reduced motion), keep the last frame correct.
-watch(ambientPaused, () => void (dirty = true))
+watch(ambientStill, () => void (dirty = true))
 </script>
 
 <template>

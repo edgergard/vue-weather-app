@@ -5,13 +5,18 @@ import {
   onBeforeUnmount,
   onMounted,
   ref,
-  shallowRef,
   useId,
   useTemplateRef,
+  watch,
 } from 'vue'
 import { storeToRefs } from 'pinia'
-import { onKeyStroke, useEventListener, useResizeObserver } from '@vueuse/core'
-import type { Map as MapLibreMap, MapMouseEvent, Marker as MapLibreMarker } from 'maplibre-gl'
+import { onKeyStroke, useDevicePixelRatio, useEventListener, useResizeObserver } from '@vueuse/core'
+import type {
+  Map as MapLibreMap,
+  MapLibreEvent,
+  MapMouseEvent,
+  Marker as MapLibreMarker,
+} from 'maplibre-gl'
 // The worker is a separate ES module in MapLibre 6; Vite emits it as an asset next to the chunk.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -19,13 +24,12 @@ import { GLOBE_CITIES, reverseGeocode } from '@/entities/place'
 import { describeCode, useCurrentWeatherMany } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import ErrorNotice from '@/shared/ui/ErrorNotice.vue'
-import { motionAllowed } from '@/shared/lib/motion'
+import { motionAllowed, useSuspendAmbient } from '@/shared/lib/motion'
 import {
   cameraDistance,
   cullMargin,
   DEFAULT_FOV,
   globeRadius,
-  isOnFarSide,
   overlayFade,
   restingOutline,
   restingZoom,
@@ -54,9 +58,20 @@ const SPIN_MAX_RELATIVE_ZOOM = 0.8
 /** Opening a city zooms in at least this much past the resting globe. */
 const SELECT_RELATIVE_ZOOM = 0.6
 const START = { lng: 24, lat: 30 }
+/** Map canvas resolution cap: sharp enough on high-DPI screens at well under half the pixels. */
+const MAX_PIXEL_RATIO = 1.5
+/** Marks the camera jumps made by the auto-spin, so 'moveend' handlers can skip them. */
+const SPIN_EVENT = { autoSpin: true } as const
+const RAD = Math.PI / 180
 
 const cities = GLOBE_CITIES
 const coords = cities.map((c) => ({ lat: c.lat, lon: c.lon }))
+/** Per-city trigonometry, computed once: culling runs on every frame of the spin. */
+const cityTrig = cities.map((c) => ({
+  sinLat: Math.sin(c.lat * RAD),
+  cosLat: Math.cos(c.lat * RAD),
+  lon: c.lon * RAD,
+}))
 
 const { fmt } = storeToRefs(useSettingsStore())
 const { data: snapshots } = useCurrentWeatherMany(coords)
@@ -71,13 +86,21 @@ const failure = ref<'webgl' | 'network' | null>(null)
 const tilesFailed = ref(false)
 const selected = ref<Selection | null>(null)
 const announcement = ref('')
-/** Markers stay out of sight (and out of the tab order) until the map has placed them. */
-const hidden = shallowRef<boolean[]>(cities.map(() => true))
 const zoomedIn = ref(false)
 /** Keyboard focus is on the map or a marker: the globe holds still. */
 const keyboardInside = ref(false)
 
 const markerEls: (HTMLButtonElement | null)[] = []
+/**
+ * Which markers are hidden. Markers start hidden (and out of the tab order) until the map has
+ * placed them. Kept outside Vue: culling flips a few attributes on a few buttons per frame,
+ * which is far cheaper than re-rendering the template with all 42 of them.
+ */
+const hidden = cities.map(() => true)
+/** Stage size, read only when it changes: reading it on every frame forces a style recalc. */
+const size = { width: 0, height: 0 }
+/** The camera state the halo was last painted for; the spin changes only the longitude. */
+let painted = { zoom: NaN, lat: NaN, width: NaN, height: NaN }
 let map: MapLibreMap | null = null
 let markers: MapLibreMarker[] = []
 let disposed = false
@@ -107,10 +130,13 @@ const selectedSnapshot = computed(() => {
 
 // ---- Geometry -----------------------------------------------------------------------------
 
+function measure() {
+  size.width = stage.value?.clientWidth ?? 0
+  size.height = stage.value?.clientHeight ?? 0
+}
+
 function metrics(): StageMetrics {
-  const el = stage.value
-  const width = el?.clientWidth ?? 0
-  const height = el?.clientHeight ?? 0
+  const { width, height } = size
   const pad = stagePadding(width)
   return { width, height, padTop: pad.top, padBottom: pad.bottom }
 }
@@ -128,18 +154,24 @@ function paintOverlay() {
   let fade = 1
   if (map) {
     const { lat } = map.getCenter()
+    const zoom = map.getZoom()
+    const p = painted
+    if (p.zoom === zoom && p.lat === lat && p.width === m.width && p.height === m.height) return
+    painted = { zoom, lat, width: m.width, height: m.height }
     radius = silhouetteRadius(globeRadius(map.getZoom(), lat), cameraDistance(m.height, fov()))
     const rel = map.getZoom() - restingZoom(m, lat, fov())
     fade = overlayFade(rel)
-    zoomedIn.value = rel > SPIN_MAX_RELATIVE_ZOOM
+    const isZoomedIn = rel > SPIN_MAX_RELATIVE_ZOOM
+    if (zoomedIn.value !== isZoomedIn) zoomedIn.value = isZoomedIn
   }
   el.style.setProperty('--globe-r', `${Math.min(radius, 4000).toFixed(1)}px`)
   el.style.setProperty('--globe-cy', `${sphereCenterY(m)}px`)
   el.style.setProperty('--globe-fade', fade.toFixed(3))
 }
 
-function updateMinZoom() {
-  if (!map) return
+function updateMinZoom(e?: MapLibreEvent & { autoSpin?: boolean }) {
+  // The spin moves only the longitude, so the minimum zoom (which depends on latitude) holds.
+  if (!map || e?.autoSpin) return
   const min = restZoomAt(map.getCenter().lat) - 0.3
   if (Math.abs(map.getMinZoom() - min) > 0.01) map.setMinZoom(min)
 }
@@ -154,34 +186,50 @@ function fit() {
   paintOverlay()
 }
 
-/** Hides markers on the far side of the sphere or off screen, and takes them out of tab order. */
+/** Shows or hides one marker: out of sight, out of the tab order and out of the a11y tree. */
+function setHidden(i: number, hide: boolean) {
+  hidden[i] = hide
+  const el = markerEls[i]
+  if (!el) return
+  el.dataset.hidden = String(hide)
+  el.tabIndex = hide ? -1 : 0
+  if (hide) el.setAttribute('aria-hidden', 'true')
+  else el.removeAttribute('aria-hidden')
+}
+
+/**
+ * Hides markers on the far side of the sphere or off screen. Runs on every move, so it reads
+ * no layout and touches only the markers whose state changed.
+ */
 function cull() {
-  if (!map || !container.value) return
+  if (!map) return
   const center = map.getCenter()
-  const w = container.value.clientWidth
-  const h = container.value.clientHeight
-  const prev = hidden.value
+  const zoom = map.getZoom()
+  const { width: w, height: h } = size
   // Hide at the real horizon (it moves closer as the camera zooms in), where MapLibre makes the
   // marker transparent, so an invisible marker is never clickable, focusable or announced.
-  const margin = cullMargin(
-    globeRadius(map.getZoom(), center.lat),
-    cameraDistance(metrics().height, fov()),
-  )
-  let changed = false
-  const next = cities.map((city, i) => {
-    let hide = isOnFarSide(center, { lng: city.lon, lat: city.lat }, margin)
-    if (!hide) {
-      const p = map!.project([city.lon, city.lat])
+  const margin = cullMargin(globeRadius(zoom, center.lat), cameraDistance(h, fov()))
+  // At rest the whole sphere fits on the stage; only a zoomed-in globe can put a city off screen.
+  const checkBounds = zoom > restZoomAt(center.lat) + 0.05
+  const sinC = Math.sin(center.lat * RAD)
+  const cosC = Math.cos(center.lat * RAD)
+  const lonC = center.lng * RAD
+  let focusLost = false
+  for (let i = 0; i < cities.length; i++) {
+    const t = cityTrig[i]!
+    // cosAngle() from geometry.ts, with the city's half precomputed.
+    let hide = sinC * t.sinLat + cosC * t.cosLat * Math.cos(t.lon - lonC) < margin
+    if (!hide && checkBounds) {
+      const city = cities[i]!
+      const p = map.project([city.lon, city.lat])
       hide = p.x < -24 || p.y < -24 || p.x > w + 24 || p.y > h + 24
     }
-    if (hide !== prev[i]) changed = true
-    return hide
-  })
-  if (!changed) return
-  hidden.value = next
+    if (hide === hidden[i]) continue
+    if (hide && markerEls[i] === document.activeElement) focusLost = true
+    setHidden(i, hide)
+  }
   // Never leave keyboard focus on a marker that just disappeared.
-  const focused = markerEls.findIndex((el) => el && el === document.activeElement)
-  if (focused >= 0 && next[focused]) map.getCanvas().focus({ preventScroll: true })
+  if (focusLost) map.getCanvas().focus({ preventScroll: true })
 }
 
 // ---- Motion -------------------------------------------------------------------------------
@@ -192,7 +240,7 @@ const spin = useAutoSpin({
   onFrame(dt) {
     if (!map || map.isMoving()) return
     const c = map.getCenter()
-    map.jumpTo({ center: [wrapLng(c.lng + dt * SPIN_SPEED), c.lat] })
+    map.jumpTo({ center: [wrapLng(c.lng + dt * SPIN_SPEED), c.lat] }, SPIN_EVENT)
   },
 })
 
@@ -327,6 +375,9 @@ async function init() {
       center: [START.lng, START.lat],
       zoom: restZoomAt(START.lat),
       maxZoom: 12,
+      pixelRatio: Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO),
+      validateStyle: import.meta.env.DEV, // our own style, already checked by the tests
+      refreshExpiredTiles: false, // no refetching of the same tiles during a long spin
       attributionControl: false, // credits are shown in our own, always-visible line
       renderWorldCopies: false,
       dragRotate: false,
@@ -354,6 +405,9 @@ async function init() {
       // Put the centre of the dot, not the edge of the button, on the city.
       offset: [city.tier === 1 ? -5 : -3.5, 0],
       opacityWhenCovered: 0,
+      // Without this, every 'moveend' (each spin frame) snaps markers to whole pixels, so they
+      // step while the globe turns smoothly under them.
+      subpixelPositioning: true,
     })
       .setLngLat([city.lon, city.lat])
       .addTo(map!),
@@ -400,11 +454,18 @@ function onFailureAction() {
 }
 
 onMounted(() => {
+  measure()
   paintOverlay()
   void init()
 })
 
+// Browser zoom or a move to another monitor changes the pixel ratio; keep the canvas sharp (and
+// capped) instead of keeping the ratio it started with.
+const { pixelRatio } = useDevicePixelRatio()
+watch(pixelRatio, (dpr) => map?.setPixelRatio(Math.min(dpr || 1, MAX_PIXEL_RATIO)))
+
 useResizeObserver(stage, () => {
+  measure()
   map?.resize()
   fit()
 })
@@ -427,6 +488,9 @@ for (const el of [stage, container]) {
     box.scrollLeft = 0
   })
 }
+
+// The globe covers most of the sky: let the sky's loops rest while it is open.
+useSuspendAmbient()
 
 onBeforeUnmount(() => {
   disposed = true
@@ -526,9 +590,9 @@ onBeforeUnmount(() => {
         class="globe-marker"
         data-globe-marker
         :data-tier="city.tier"
-        :data-hidden="hidden[i] ? 'true' : 'false'"
-        :tabindex="hidden[i] ? -1 : 0"
-        :aria-hidden="hidden[i] ? 'true' : undefined"
+        data-hidden="true"
+        tabindex="-1"
+        aria-hidden="true"
         :aria-pressed="selected?.cityIndex === i ? 'true' : 'false'"
         :aria-label="markerLabel(i)"
         @click="onMarkerClick(i, $event)"
@@ -653,13 +717,6 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-line);
 }
 
-@media (hover: hover) and (min-width: 641px) {
-  .globe-marker__label {
-    background: rgb(26 12 48 / 0.46);
-    backdrop-filter: blur(10px);
-  }
-}
-
 .globe-marker__label em {
   font-style: normal;
   font-weight: 500;
@@ -688,7 +745,6 @@ onBeforeUnmount(() => {
 .globe-marker[aria-pressed='true'] .globe-marker__label {
   background: var(--color-ink);
   color: #2a1745;
-  backdrop-filter: none;
 }
 
 .globe-marker[aria-pressed='true'] .globe-marker__label em {
