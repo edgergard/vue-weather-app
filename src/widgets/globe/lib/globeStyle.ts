@@ -26,7 +26,8 @@ export const FONTS = {
   italic: ['Noto Sans Italic'],
 } as const
 
-const SOURCE = 'openmaptiles'
+/** The one vector tile source the globe draws from. */
+export const SOURCE = 'openmaptiles'
 
 /**
  * Tiles end at the Web Mercator limit, so water polygons have an edge there and the coastline
