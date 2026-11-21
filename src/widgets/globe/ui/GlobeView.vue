@@ -41,9 +41,10 @@ import {
   wrapLng,
   type StageMetrics,
 } from '../lib/geometry'
-import { buildGlobeStyle, PLACE_LABEL_LAYERS } from '../lib/globeStyle'
+import { buildGlobeStyle, PLACE_LABEL_LAYERS, SOURCE } from '../lib/globeStyle'
 import { placeFromFeature, regionWithout } from '../lib/placeFeature'
 import { useAutoSpin } from '../model/useAutoSpin'
+import { createTileRetry, type TileId } from '../model/tileRetry'
 import GlobeCityCard, { type GlobeCardPlace } from './GlobeCityCard.vue'
 import GlobeAttribution from './GlobeAttribution.vue'
 
@@ -105,6 +106,8 @@ let markers: MapLibreMarker[] = []
 let disposed = false
 let touched = false
 let tilesLoaded = false
+/** Failed tiles get fetched again; MapLibre itself never retries them while they are in view. */
+const tileRetry = createTileRetry({ refresh: (ids) => map?.refreshTiles(SOURCE, ids) })
 let returnFocusTo: HTMLElement | null = null
 let lookupSeq = 0
 
@@ -383,6 +386,14 @@ async function init() {
       pixelRatio: Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO),
       validateStyle: import.meta.env.DEV, // our own style, already checked by the tests
       refreshExpiredTiles: false, // no refetching of the same tiles during a long spin
+      // Keep every tile of a full turn in memory (the default cache, ~60 tiles on desktop and ~30
+      // on phones, evicts and refetches them each turn, and every refetch can fail).
+      maxTileCacheZoomLevels: 12,
+      // …but never more than this many: every tile of a turn at globe zoom (~85) fits, while a long
+      // zoomed-in session on a phone can't grow the cache (and GPU memory) without bound.
+      maxTileCacheSize: 100,
+      // Keep low-detail parent tiles on screen while sharper ones load, instead of bare land.
+      cancelPendingTileRequestsWhileZooming: false,
       attributionControl: false, // credits are shown in our own, always-visible line
       renderWorldCopies: false,
       dragRotate: false,
@@ -439,13 +450,25 @@ async function init() {
     if (!e.tile) return
     tilesLoaded = true
     tilesFailed.value = false
+    const id = tileIdOf(e)
+    if (id) tileRetry.loaded(id)
   })
-  // Tiles or fonts failing is not fatal: the globe, markers and cards keep working.
+  // Tiles or fonts failing is not fatal: the globe, markers and cards keep working, and failed
+  // tiles are fetched again.
   map.on('error', (e) => {
     if (import.meta.env.DEV) console.warn('Globe:', e.error)
+    const id = tileIdOf(e)
+    if (id) tileRetry.failed(id)
     if (!tilesLoaded) tilesFailed.value = true
   })
   fit()
+}
+
+/** The tile an event is about, when it is one of our map tiles. */
+function tileIdOf(e: unknown): TileId | null {
+  const ev = e as { sourceId?: string; tile?: { tileID?: { canonical?: TileId } } }
+  const c = ev.sourceId === SOURCE ? ev.tile?.tileID?.canonical : undefined
+  return c ? { x: c.x, y: c.y, z: c.z } : null
 }
 
 function fail(kind: 'webgl' | 'network') {
@@ -497,9 +520,13 @@ for (const el of [stage, container]) {
 // The globe covers most of the sky: let the sky's loops rest while it is open.
 useSuspendAmbient()
 
+// Back online: fetch whatever failed while offline right away, not at the next backoff step.
+useEventListener(window, 'online', () => tileRetry.online())
+
 onBeforeUnmount(() => {
   disposed = true
   lookupSeq++
+  tileRetry.dispose()
   markers.forEach((m) => m.remove())
   markers = []
   map?.remove()
