@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Globe } from 'lucide-vue-next'
 import { PlaceSearch } from '@/features/search-place'
 import UnitsSwitch from '@/features/switch-units/UnitsSwitch.vue'
 </script>
@@ -21,7 +22,15 @@ import UnitsSwitch from '@/features/switch-units/UnitsSwitch.vue'
     <div class="col-span-2 row-start-2 sm:col-span-1 sm:row-start-auto sm:max-w-xl">
       <PlaceSearch />
     </div>
-    <div class="justify-self-end">
+    <div class="flex items-center gap-2 justify-self-end">
+      <!-- RouterLink sets aria-current="page" while the globe is open. -->
+      <RouterLink
+        :to="{ name: 'globe' }"
+        class="inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-line bg-shade px-3.5 text-sm font-semibold text-ink-muted transition-colors hover:text-ink aria-[current=page]:border-transparent aria-[current=page]:bg-ink aria-[current=page]:text-[#2a1745] sm:px-4"
+      >
+        <Globe :size="18" aria-hidden="true" />
+        <span class="max-[380px]:sr-only">Globe</span>
+      </RouterLink>
       <UnitsSwitch />
     </div>
   </header>

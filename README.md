@@ -6,7 +6,11 @@ with the sun tracking its actual position between sunrise and sunset.
 
 - [Demo](https://edgergard.github.io/vue-weather-app/)
 - Weather & geocoding: [Open-Meteo](https://open-meteo.com/) (free, no API key)
-- Reverse geocoding for "use my location": [Nominatim / OpenStreetMap](https://nominatim.org/)
+- Reverse geocoding for "use my location" and towns picked on the globe:
+  [Nominatim / OpenStreetMap](https://nominatim.org/)
+- Globe: [MapLibre GL JS](https://maplibre.org/) with vector tiles from
+  [OpenFreeMap](https://openfreemap.org/) (free, no API key; OpenMapTiles schema, map data ©
+  OpenStreetMap contributors)
 
 ## Features
 
@@ -17,6 +21,11 @@ with the sun tracking its actual position between sunrise and sunset.
 - Saved places with live temperatures, persisted in `localStorage` (places saved by v1 are migrated)
 - °C / °F switch (defaults from the browser locale)
 - Shareable URLs: `#/forecast/:lat/:lon?name=…`
+- Globe (`#/globe`): spin a 3D globe, pick one of ~40 cities (live temperatures for all of them
+  come from a single Open-Meteo request) or zoom in and click any town's name, then open its
+  forecast. The map uses our own compact "Amethyst" style on OpenFreeMap tiles, and the required
+  credits (OpenFreeMap, OpenMapTiles, OpenStreetMap contributors) stay visible on the map. City
+  markers are real buttons, so it works with a keyboard too; the header search is always there
 - Animated with GSAP: a flowing "liquid silk" ether over the sky (soft patches of light that
   slide and shift hue like mother-of-pearl, on one canvas), weather particles (rain, snow, fog, stars, lightning) and entrance animations
   (the temperature counts up, the sun rolls along its arc, the hourly line draws itself)
@@ -26,7 +35,7 @@ with the sun tracking its actual position between sunrise and sunset.
 ## Stack
 
 Vue 3.5 (`<script setup>`), TypeScript (strict), Vite 6, Tailwind CSS 4, Pinia, TanStack Query,
-VueUse, Vue Router, GSAP (with SplitText), Lucide icons, Vitest.
+VueUse, Vue Router, GSAP (with SplitText), MapLibre GL JS, Lucide icons, Vitest.
 
 ## Architecture
 
@@ -36,8 +45,8 @@ only import from layers below it.
 ```
 src/
   app/        bootstrap: main.ts, router, global styles, App shell
-  pages/      route screens: HomePage, ForecastPage
-  widgets/    composed UI blocks: header, sky backdrop, saved places, forecast sections
+  pages/      route screens: HomePage, ForecastPage, GlobePage
+  widgets/    composed UI blocks: header, sky backdrop, saved places, forecast sections, globe
   features/   user actions: search a place, locate me, save a place, switch units
   entities/   domain: weather (API, mapping, conditions, sky), place (API, store, routes), settings
   shared/     framework-agnostic helpers: http client, formatting (units, time), base UI
@@ -59,6 +68,11 @@ Key decisions:
   `useAmbientMotion` (looping, follows the Pause button) and `useTweened` (count-ups). The ether is a
   half-resolution canvas; by day it shimmers in hue only (equal-luminance colours) so white text
   keeps AA contrast, at night it glows.
+- **The globe** (`widgets/globe`) is the only place that loads MapLibre: the page is a lazy route
+  and the library (about 300 kB gzipped, plus its worker) is imported dynamically, so other pages
+  never download it. Camera maths (fit zoom, sphere outline, far-side culling) and the map style
+  are pure, unit-tested functions. The gentle auto-spin follows the same motion rules as the rest
+  of the app (off under reduced motion and while animations are paused).
 - To test animations on a machine with reduced motion turned on, run
   `localStorage.setItem('skyline:force-motion', '1')` in the dev server (ignored in production).
 

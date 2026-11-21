@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import AppHeader from '@/widgets/app-header/AppHeader.vue'
 import SkyBackdrop from '@/widgets/sky-backdrop/SkyBackdrop.vue'
 import AppFooter from '@/widgets/app-footer/AppFooter.vue'
 import { focusPageHeading } from '@/shared/lib/focus'
 
 const mainEl = ref<HTMLElement>()
+const currentRoute = useRoute()
 </script>
 
 <template>
@@ -22,7 +24,8 @@ const mainEl = ref<HTMLElement>()
     id="main"
     ref="mainEl"
     tabindex="-1"
-    class="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 outline-none sm:px-8"
+    class="w-full flex-1 outline-none"
+    :class="currentRoute.meta.fullBleed ? '' : 'mx-auto max-w-6xl px-4 pb-16 sm:px-8'"
   >
     <RouterView v-slot="{ Component, route }">
       <Transition

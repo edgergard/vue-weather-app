@@ -45,3 +45,6 @@ export interface Coordinates {
   lat: number
   lon: number
 }
+
+/** Just enough current weather for a map marker: one of many places fetched together. */
+export type CurrentSnapshot = Pick<CurrentWeather, 'time' | 'temperature' | 'code' | 'isDay'>
