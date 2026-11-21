@@ -10,7 +10,7 @@ with the sun tracking its actual position between sunrise and sunset.
 
 ## Features
 
-- City search with keyboard navigation (`/` to focus, arrows, Enter, Esc)
+- City search with keyboard navigation (Ctrl/⌘+K to focus, arrows, Enter, Esc)
 - "Use my location" via the browser Geolocation API
 - Current conditions, 24-hour temperature curve, 10-day forecast with temperature ranges, details
   (wind, humidity, UV, pressure, visibility, precipitation), sunrise/sunset arc
