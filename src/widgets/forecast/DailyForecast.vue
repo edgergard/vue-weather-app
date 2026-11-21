@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Droplet } from 'lucide-vue-next'
 import { describeCode, todayIndex, WeatherIcon, type Forecast } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { formatWeekday } from '@/shared/lib'
+import { gsap, useMotion } from '@/shared/lib/motion'
 
 const props = defineProps<{ forecast: Forecast; now: number }>()
 const { fmt } = storeToRefs(useSettingsStore())
@@ -19,11 +20,39 @@ const bounds = computed(() => {
   return { min, span: Math.max(1, max - min) }
 })
 
+const root = ref<HTMLElement>()
+
+/** Each day's temperature range grows out from its low end, one row after another. */
+useMotion(root, () => {
+  gsap
+    .timeline({ delay: 0.2 })
+    .from('.df-row', {
+      opacity: 0,
+      x: -8,
+      duration: 0.45,
+      stagger: 0.05,
+      ease: 'power2.out',
+      clearProps: 'transform,opacity',
+    })
+    .from(
+      '.df-range',
+      {
+        scaleX: 0,
+        transformOrigin: 'left center',
+        duration: 0.8,
+        stagger: 0.05,
+        ease: 'power3.out',
+      },
+      0.15,
+    )
+    .from('.df-now', { scale: 0, duration: 0.4, ease: 'back.out(3)' }, '-=0.4')
+})
+
 const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
 </script>
 
 <template>
-  <section class="pane p-2 sm:p-3" aria-labelledby="daily-title">
+  <section ref="root" class="pane p-2 sm:p-3" aria-labelledby="daily-title">
     <h2 id="daily-title" class="px-4 pt-3 pb-2 font-display text-lg font-medium">
       Next {{ days.length }} days
     </h2>
@@ -31,7 +60,7 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
       <li
         v-for="(day, i) in days"
         :key="day.time"
-        class="grid grid-cols-[3rem_1.5rem_3rem_1fr] items-center gap-x-2.5 rounded-2xl px-3 py-2.5 sm:gap-x-3 sm:px-4 sm:grid-cols-[4rem_2rem_3rem_1fr]"
+        class="df-row grid grid-cols-[3rem_1.5rem_3rem_1fr] items-center gap-x-2.5 rounded-2xl px-3 py-2.5 sm:gap-x-3 sm:px-4 sm:grid-cols-[4rem_2rem_3rem_1fr]"
         :class="i === 0 ? 'bg-veil' : ''"
       >
         <span class="font-medium">{{
@@ -52,12 +81,12 @@ const pct = (t: number) => ((t - bounds.value.min) / bounds.value.span) * 100
           >
           <span class="relative h-1.5 min-w-6 flex-1 rounded-full bg-shade" aria-hidden="true">
             <span
-              class="absolute inset-y-0 rounded-full bg-linear-to-r from-violet-300 to-sun"
+              class="df-range absolute inset-y-0 rounded-full bg-linear-to-r from-violet-300 to-sun"
               :style="{ left: `${pct(day.min)}%`, right: `${100 - pct(day.max)}%` }"
             />
             <span
               v-if="i === 0"
-              class="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2a1745] bg-white"
+              class="df-now absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2a1745] bg-white"
               :style="{ left: `${pct(forecast.current.temperature)}%` }"
               aria-hidden="true"
             />

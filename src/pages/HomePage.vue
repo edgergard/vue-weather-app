@@ -7,12 +7,59 @@ import { skyFor, useForecast, useSkyStore } from '@/entities/weather'
 import SavedPlaceRow from '@/widgets/saved-places/SavedPlaceRow.vue'
 import { useMinuteClock } from '@/shared/lib/useMinuteClock'
 import { focusPageHeading, usePageFocus } from '@/shared/lib/focus'
+import { gsap, SplitText, useMotion } from '@/shared/lib/motion'
 
 const store = usePlacesStore()
 const { places } = storeToRefs(store)
 const announcement = ref('')
 useTitle('Your places — Skyline')
 usePageFocus()
+
+const root = ref<HTMLElement>()
+
+/** Entrance: saved places deal in one by one; the empty state's question rises word by word. */
+useMotion(root, (el) => {
+  const rows = el.querySelectorAll('.places-list > li')
+  if (rows.length) {
+    gsap.from(rows, {
+      y: 28,
+      opacity: 0,
+      duration: 0.7,
+      stagger: 0.08,
+      ease: 'power3.out',
+      clearProps: 'transform,opacity',
+    })
+    return
+  }
+  const heading = el.querySelector<HTMLElement>('#empty-title')
+  if (!heading) return
+  const split = SplitText.create(heading, { type: 'words', mask: 'words' })
+  gsap
+    .timeline({
+      defaults: { ease: 'power3.out' },
+      // Unsplit once the words have landed: the masks would otherwise clip descenders (y, j, í).
+      onComplete: () => split.revert(),
+    })
+    .from(split.words, { yPercent: 115, duration: 0.9, stagger: 0.09 })
+    .from(
+      '.empty-intro',
+      { y: 14, opacity: 0, duration: 0.7, clearProps: 'transform,opacity' },
+      '-=0.5',
+    )
+    .from(
+      '.empty-chip',
+      {
+        y: 16,
+        scale: 0.9,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.06,
+        ease: 'back.out(2)',
+        clearProps: 'transform,opacity',
+      },
+      '-=0.4',
+    )
+})
 
 /** Remove a place, then move focus to the row that took its place (or the heading) and say so. */
 async function removePlace(place: Place, index: number) {
@@ -41,14 +88,14 @@ const suggestions = [
 </script>
 
 <template>
-  <div>
+  <div ref="root">
     <section v-if="places.length" aria-labelledby="places-title" class="pt-8 sm:pt-12">
       <h1 id="places-title" class="font-display text-3xl font-medium tracking-tight sm:text-4xl">
         Your places
       </h1>
       <TransitionGroup
         tag="ul"
-        class="relative mt-6 flex flex-col gap-3"
+        class="places-list relative mt-6 flex flex-col gap-3"
         move-class="transition-transform duration-300 ease-out-soft"
         leave-active-class="transition duration-200 ease-in absolute inset-x-0"
         leave-to-class="opacity-0 scale-98"
@@ -73,12 +120,12 @@ const suggestions = [
       >
         Where should we look?
       </h1>
-      <p class="mt-5 max-w-md text-lg text-ink-muted">
+      <p class="empty-intro mt-5 max-w-md text-lg text-ink-muted">
         Search for a city above, or start with one of these. Save the places you check often and
         they'll wait for you here.
       </p>
       <ul class="mt-8 flex flex-wrap gap-2">
-        <li v-for="s in suggestions" :key="s.id">
+        <li v-for="s in suggestions" :key="s.id" class="empty-chip">
           <RouterLink
             :to="placeRoute(s)"
             class="inline-flex h-11 items-center rounded-full border border-line bg-veil px-5 font-medium transition-colors hover:bg-veil-strong"

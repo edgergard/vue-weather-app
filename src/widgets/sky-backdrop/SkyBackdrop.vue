@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSkyStore } from '@/entities/weather'
+import { gsap, motionAllowed, useAmbientMotion } from '@/shared/lib/motion'
+import WeatherParticles from './WeatherParticles.vue'
 
 const { sky } = storeToRefs(useSkyStore())
+const root = ref<HTMLElement>()
 
 /** The sun travels a shallow arc from left (sunrise) to right (sunset). */
 const orb = computed(() => {
@@ -18,27 +21,85 @@ const orb = computed(() => {
   }
 })
 
-// Sky colours live on :root so any surface can tint itself with the current sky.
-watchEffect(() => {
-  const root = document.documentElement.style
-  root.setProperty('--sky-top', sky.value.top)
-  root.setProperty('--sky-bottom', sky.value.bottom)
-  root.setProperty('--sky-glow', sky.value.glow)
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', sky.value.top)
-})
+/**
+ * Sky colours live on :root so any surface can tint itself with the current sky.
+ * GSAP blends them when the place or the weather changes; with reduced motion they switch at once.
+ */
+watch(
+  sky,
+  (next, prev) => {
+    const vars = { '--sky-top': next.top, '--sky-bottom': next.bottom, '--sky-glow': next.glow }
+    if (prev && motionAllowed()) {
+      gsap.to(document.documentElement, {
+        ...vars,
+        duration: 1.8,
+        ease: 'sine.inOut',
+        overwrite: 'auto',
+      })
+    } else {
+      gsap.set(document.documentElement, vars)
+    }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next.top)
+  },
+  { immediate: true },
+)
 
-const style = computed(() => ({
+const orbStyle = computed(() => ({
   '--orb-x': `${orb.value.x}%`,
   '--orb-y': `${orb.value.y}%`,
   '--orb-size': `${orb.value.size}vmax`,
   '--orb-opacity': orb.value.opacity,
 }))
+
+/**
+ * The ambient "flowing" sky: the gradient slowly turns, and three soft colour fields drift and
+ * breathe across it. They only use the sky's own colours (and a deeper shade of them), so text
+ * contrast never drops below the static gradient's. Everything animates transform or opacity
+ * only, so the compositor does the work and nothing is repainted per frame.
+ */
+useAmbientMotion(root, (el) => {
+  // Turning an oversized gradient layer reads as the gradient angle changing.
+  gsap.fromTo(
+    el.querySelector('.sky__base'),
+    { rotation: -15 },
+    { rotation: 65, duration: 26, ease: 'sine.inOut', repeat: -1, yoyo: true },
+  )
+
+  gsap.utils.toArray<HTMLElement>('.sky__field', el).forEach((field) => {
+    gsap.to(field, {
+      xPercent: 'random(-35, 35)',
+      yPercent: 'random(-25, 25)',
+      scale: 'random(0.85, 1.35)',
+      rotation: 'random(-25, 25)',
+      duration: 'random(16, 26)',
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      repeatRefresh: true,
+    })
+  })
+
+  // The sun/moon glow breathes gently, only ever dimmer than its contrast-checked strength.
+  gsap.to(el.querySelector('.sky__orb-wrap'), {
+    opacity: 0.7,
+    duration: 6,
+    ease: 'sine.inOut',
+    repeat: -1,
+    yoyo: true,
+  })
+})
 </script>
 
 <template>
-  <div class="sky" :style="style" aria-hidden="true">
-    <div class="sky__orb" />
-    <div v-if="sky.phase === 'night'" class="sky__stars" />
+  <div ref="root" class="sky" aria-hidden="true">
+    <div class="sky__base" />
+    <div class="sky__field sky__field--a" />
+    <div class="sky__field sky__field--b" />
+    <div class="sky__field sky__field--c" />
+    <div class="sky__orb-wrap">
+      <div class="sky__orb" :style="orbStyle" />
+    </div>
+    <WeatherParticles :key="`${sky.group}-${sky.phase}`" :group="sky.group" :phase="sky.phase" />
     <div class="sky__grain" />
   </div>
 </template>
@@ -48,11 +109,55 @@ const style = computed(() => ({
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(to right, var(--sky-top), var(--sky-bottom));
-  transition:
-    --sky-top 1.6s var(--ease-out-soft),
-    --sky-bottom 1.6s var(--ease-out-soft),
-    --sky-glow 1.6s var(--ease-out-soft);
+  overflow: hidden;
+  background: var(--sky-bottom);
+}
+
+/* Big enough to cover the viewport at any rotation; GSAP turns it to make the gradient sweep. */
+.sky__base {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  margin: -75vmax 0 0 -75vmax;
+  background: linear-gradient(90deg, var(--sky-top), var(--sky-bottom));
+  will-change: transform;
+}
+
+.sky__orb-wrap {
+  position: absolute;
+  inset: 0;
+  will-change: opacity;
+}
+
+/* Large soft colour fields; GSAP moves them around to make the sky flow. */
+.sky__field {
+  position: absolute;
+  width: 85vmax;
+  height: 85vmax;
+  border-radius: 50%;
+  will-change: transform;
+}
+.sky__field--a {
+  top: -30vmax;
+  left: -25vmax;
+  background: radial-gradient(closest-side, var(--sky-top), transparent);
+}
+.sky__field--b {
+  right: -30vmax;
+  bottom: -35vmax;
+  background: radial-gradient(closest-side, var(--sky-bottom), transparent);
+}
+.sky__field--c {
+  top: 20%;
+  left: 25%;
+  opacity: 0.7;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--sky-top) 60%, #12062a),
+    transparent
+  );
 }
 
 .sky__orb {
@@ -65,25 +170,6 @@ const style = computed(() => ({
     color-mix(in oklab, var(--sky-glow) 8%, transparent) 30%,
     transparent 70%
   );
-  transition: opacity 1.6s var(--ease-out-soft);
-}
-
-.sky__stars {
-  position: absolute;
-  inset: 0 0 40% 0;
-  opacity: 0.55;
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 27% 8%, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 41% 26%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 58% 12%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 66% 34%, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 74% 6%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 91% 22%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 6% 40%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 35% 44%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 86% 46%, #fff 50%, transparent 51%);
-  mask-image: linear-gradient(to bottom, #000, transparent);
 }
 
 /* A whisper of film grain keeps large gradients from banding. */

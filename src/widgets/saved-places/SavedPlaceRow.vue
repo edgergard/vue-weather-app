@@ -39,7 +39,7 @@ const style = computed(() =>
     <RouterLink
       :to="placeRoute(place)"
       :data-place-id="place.id"
-      class="flex min-h-28 items-center gap-4 overflow-hidden rounded-pane border border-line bg-veil px-5 py-4 transition-[transform,border-color] duration-300 ease-out-soft hover:border-white/35 sm:gap-6 sm:px-7"
+      class="flex min-h-28 items-center gap-4 overflow-hidden rounded-pane border border-line bg-veil px-5 py-4 transition-[translate,border-color] duration-300 ease-out-soft hover:-translate-y-0.5 hover:border-white/35 sm:gap-6 sm:px-7"
       :style="style"
     >
       <div class="min-w-0 flex-1">

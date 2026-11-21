@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatClock } from '@/shared/lib'
+import { useTweened } from '@/shared/lib/motion'
 
 const props = defineProps<{ sunrise: number; sunset: number; now: number; timezone: string }>()
 
@@ -19,7 +20,13 @@ function point(t: number) {
   const angle = Math.PI * (1 - t)
   return { x: W / 2 + Math.cos(angle) * (W / 2 - PAD), y: H - Math.sin(angle) * (H - PAD) }
 }
-const sun = computed(() => point(progress.value))
+/** The sun rolls from sunrise to where it is now, drawing the elapsed part of the arc behind it. */
+const shownProgress = useTweened(() => progress.value, {
+  from: () => 0,
+  duration: 1.8,
+  ease: 'power2.inOut',
+})
+const sun = computed(() => point(shownProgress.value))
 const arc = `M ${PAD} ${H} A ${W / 2 - PAD} ${H - PAD} 0 0 1 ${W - PAD} ${H}`
 
 const daylight = computed(() => {
