@@ -27,14 +27,6 @@ const showStars = computed(
   () => props.phase === 'night' && (props.group === 'clear' || props.group === 'partly'),
 )
 
-/**
- * Accent colours the shimmer layer flows through. By day they are deeper than the sky; at night a
- * little lighter. Either way white text on them stays above 7:1, so contrast is never at risk.
- */
-const accents = computed(() =>
-  props.phase === 'night' ? ['#5a3aa0', '#7a3a8c', '#3b4a9c'] : ['#4a2f86', '#5e2a6e', '#3a347e'],
-)
-
 const drops = computed(() =>
   range(rainCount.value).map((i) => ({
     left: `${rand(i, 1) * 110 - 5}%`,
@@ -62,31 +54,6 @@ useAmbientMotion(root, (el) => {
   // Fall distances follow the viewport, so rotating a phone keeps rain reaching the bottom.
   const vh = () => window.innerHeight
   const falling: gsap.core.Tween[] = []
-
-  // Shimmer: three fixed-colour layers crossfade (opacity only, nothing re-rasterised) while the
-  // group drifts across the sky.
-  const shimmer = el.querySelector<HTMLElement>('.wp-accent')
-  if (shimmer) {
-    const [a, b, c] = gsap.utils.toArray<HTMLElement>('.wp-accent-layer', shimmer)
-    gsap
-      .timeline({ repeat: -1, defaults: { duration: 9, ease: 'sine.inOut' } })
-      .to(b!, { opacity: 1 })
-      .to(a!, { opacity: 0 }, '<')
-      .to(c!, { opacity: 1 })
-      .to(b!, { opacity: 0 }, '<')
-      .to(a!, { opacity: 1 })
-      .to(c!, { opacity: 0 }, '<')
-    gsap.to(shimmer, {
-      xPercent: 'random(-45, 45)',
-      yPercent: 'random(-30, 30)',
-      scale: 'random(0.8, 1.4)',
-      duration: 'random(14, 22)',
-      ease: 'sine.inOut',
-      repeat: -1,
-      yoyo: true,
-      repeatRefresh: true,
-    })
-  }
 
   gsap.utils.toArray<HTMLElement>('.wp-drop', el).forEach((drop, i) => {
     const fall = gsap
@@ -170,14 +137,6 @@ useAmbientMotion(root, (el) => {
 
 <template>
   <div ref="root" class="wp">
-    <span class="wp-accent" :style="{ opacity: phase === 'night' ? 0.55 : 0.5 }">
-      <span
-        v-for="colour in accents"
-        :key="colour"
-        class="wp-accent-layer"
-        :style="{ background: `radial-gradient(closest-side, ${colour}, transparent)` }"
-      />
-    </span>
     <span
       v-for="(s, i) in stars"
       :key="`s${i}`"
@@ -217,25 +176,6 @@ useAmbientMotion(root, (el) => {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.wp-accent {
-  position: absolute;
-  top: 5%;
-  left: 15%;
-  width: 70vmax;
-  height: 70vmax;
-  will-change: transform;
-}
-
-.wp-accent-layer {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  will-change: opacity;
-}
-.wp-accent-layer + .wp-accent-layer {
-  opacity: 0;
 }
 
 .wp-star {

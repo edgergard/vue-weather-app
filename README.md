@@ -17,8 +17,8 @@ with the sun tracking its actual position between sunrise and sunset.
 - Saved places with live temperatures, persisted in `localStorage` (places saved by v1 are migrated)
 - °C / °F switch (defaults from the browser locale)
 - Shareable URLs: `#/forecast/:lat/:lon?name=…`
-- Animated with GSAP: a flowing sky (drifting colour fields, a slowly turning gradient, an
-  accent shimmer), weather particles (rain, snow, fog, stars, lightning) and entrance animations
+- Animated with GSAP: a flowing "liquid silk" ether over the sky (soft patches of light that
+  slide and shift hue like mother-of-pearl, on one canvas), weather particles (rain, snow, fog, stars, lightning) and entrance animations
   (the temperature counts up, the sun rolls along its arc, the hourly line draws itself)
 - Responsive, keyboard accessible (WCAG 2.2 AA). All motion is off under
   `prefers-reduced-motion`, and a footer button pauses the looping background
@@ -56,8 +56,9 @@ Key decisions:
   and painted by a single `SkyBackdrop` widget through CSS custom properties.
 - **Motion** goes through `shared/lib/motion.ts`: `useMotion` (one-off, inside a GSAP
   `matchMedia` context so it is skipped under reduced motion and reverted on unmount),
-  `useAmbientMotion` (looping, follows the Pause button) and `useTweened` (count-ups). Ambient
-  layers animate only `transform` and `opacity`.
+  `useAmbientMotion` (looping, follows the Pause button) and `useTweened` (count-ups). The ether is a
+  half-resolution canvas; by day it shimmers in hue only (equal-luminance colours) so white text
+  keeps AA contrast, at night it glows.
 - To test animations on a machine with reduced motion turned on, run
   `localStorage.setItem('skyline:force-motion', '1')` in the dev server (ignored in production).
 

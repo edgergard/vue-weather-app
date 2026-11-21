@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useSkyStore } from '@/entities/weather'
 import { gsap, motionAllowed, useAmbientMotion } from '@/shared/lib/motion'
 import WeatherParticles from './WeatherParticles.vue'
+import EtherSilk from './EtherSilk.vue'
 
 const { sky } = storeToRefs(useSkyStore())
 const root = ref<HTMLElement>()
@@ -51,35 +52,8 @@ const orbStyle = computed(() => ({
   '--orb-opacity': orb.value.opacity,
 }))
 
-/**
- * The ambient "flowing" sky: the gradient slowly turns, and three soft colour fields drift and
- * breathe across it. They only use the sky's own colours (and a deeper shade of them), so text
- * contrast never drops below the static gradient's. Everything animates transform or opacity
- * only, so the compositor does the work and nothing is repainted per frame.
- */
+/** The sun/moon glow breathes gently, only ever dimmer than its contrast-checked strength. */
 useAmbientMotion(root, (el) => {
-  // Turning an oversized gradient layer reads as the gradient angle changing.
-  gsap.fromTo(
-    el.querySelector('.sky__base'),
-    { rotation: -15 },
-    { rotation: 65, duration: 26, ease: 'sine.inOut', repeat: -1, yoyo: true },
-  )
-
-  gsap.utils.toArray<HTMLElement>('.sky__field', el).forEach((field) => {
-    gsap.to(field, {
-      xPercent: 'random(-35, 35)',
-      yPercent: 'random(-25, 25)',
-      scale: 'random(0.85, 1.35)',
-      rotation: 'random(-25, 25)',
-      duration: 'random(16, 26)',
-      ease: 'sine.inOut',
-      repeat: -1,
-      yoyo: true,
-      repeatRefresh: true,
-    })
-  })
-
-  // The sun/moon glow breathes gently, only ever dimmer than its contrast-checked strength.
   gsap.to(el.querySelector('.sky__orb-wrap'), {
     opacity: 0.7,
     duration: 6,
@@ -92,10 +66,8 @@ useAmbientMotion(root, (el) => {
 
 <template>
   <div ref="root" class="sky" aria-hidden="true">
-    <div class="sky__base" />
-    <div class="sky__field sky__field--a" />
-    <div class="sky__field sky__field--b" />
-    <div class="sky__field sky__field--c" />
+    <!-- The flowing "liquid silk" ether: sky gradient plus shimmering light, on one canvas. -->
+    <EtherSilk />
     <div class="sky__orb-wrap">
       <div class="sky__orb" :style="orbStyle" />
     </div>
@@ -113,51 +85,10 @@ useAmbientMotion(root, (el) => {
   background: var(--sky-bottom);
 }
 
-/* Big enough to cover the viewport at any rotation; GSAP turns it to make the gradient sweep. */
-.sky__base {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150vmax;
-  height: 150vmax;
-  margin: -75vmax 0 0 -75vmax;
-  background: linear-gradient(90deg, var(--sky-top), var(--sky-bottom));
-  will-change: transform;
-}
-
 .sky__orb-wrap {
   position: absolute;
   inset: 0;
   will-change: opacity;
-}
-
-/* Large soft colour fields; GSAP moves them around to make the sky flow. */
-.sky__field {
-  position: absolute;
-  width: 85vmax;
-  height: 85vmax;
-  border-radius: 50%;
-  will-change: transform;
-}
-.sky__field--a {
-  top: -30vmax;
-  left: -25vmax;
-  background: radial-gradient(closest-side, var(--sky-top), transparent);
-}
-.sky__field--b {
-  right: -30vmax;
-  bottom: -35vmax;
-  background: radial-gradient(closest-side, var(--sky-bottom), transparent);
-}
-.sky__field--c {
-  top: 20%;
-  left: 25%;
-  opacity: 0.7;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in oklab, var(--sky-top) 60%, #12062a),
-    transparent
-  );
 }
 
 .sky__orb {

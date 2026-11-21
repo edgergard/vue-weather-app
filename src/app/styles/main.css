@@ -52,6 +52,13 @@
     font-feature-settings: 'tnum' 1;
   }
 
+  /* Header, page, footer: the footer sits at the bottom of the screen even on short pages. */
+  #app {
+    display: flex;
+    min-height: 100dvh;
+    flex-direction: column;
+  }
+
   /* White ring with a dark inner halo: at least 3:1 against every sky, panel and white fill. */
   :focus-visible {
     outline: 2px solid #fff;
