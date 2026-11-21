@@ -91,6 +91,13 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-pane);
   backdrop-filter: blur(18px) saturate(1.2);
+
+  /* The sky behind panels moves every frame, so a backdrop blur is recomputed constantly.
+     Phones and tablets get a denser tint instead, which looks close and costs nothing. */
+  @media (hover: none), (max-width: 640px) {
+    background: rgb(26 12 48 / 0.34);
+    backdrop-filter: none;
+  }
 }
 
 @utility scrollbar-none {

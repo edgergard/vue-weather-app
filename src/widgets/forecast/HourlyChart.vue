@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Droplet } from 'lucide-vue-next'
 import { WeatherIcon, type Forecast } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { formatHour } from '@/shared/lib'
+import { gsap, useAmbientMotion, useMotion } from '@/shared/lib/motion'
 
 const props = defineProps<{ forecast: Forecast; now: number }>()
 const { fmt } = storeToRefs(useSettingsStore())
@@ -52,10 +53,54 @@ const area = computed(() => {
   return `${curve.value} L ${p.at(-1)!.x} ${CHART_H} L ${p[0]!.x} ${CHART_H} Z`
 })
 const width = computed(() => hours.value.length * COL)
+
+const root = ref<HTMLElement>()
+
+/** The temperature line draws itself left to right and the hours follow. */
+useMotion(root, (el) => {
+  const line = el.querySelector<SVGPathElement>('.hc-curve')
+  const length = line?.getTotalLength() ?? 0
+  gsap
+    .timeline({ defaults: { ease: 'power2.out' } })
+    .fromTo(
+      line,
+      { strokeDasharray: length, strokeDashoffset: length },
+      {
+        strokeDashoffset: 0,
+        duration: 1.6,
+        ease: 'power2.inOut',
+        clearProps: 'strokeDasharray,strokeDashoffset',
+      },
+    )
+    .from('.hc-area', { opacity: 0, duration: 1 }, 0.5)
+    .from(
+      '.hc-col',
+      { y: 10, opacity: 0, duration: 0.5, stagger: 0.03, clearProps: 'transform,opacity' },
+      0.15,
+    )
+    .from('.hc-now', { scale: 0, svgOrigin: '0 0', duration: 0.4, ease: 'back.out(3)' }, 0)
+})
+
+/** A soft ring keeps pulsing around "now". Ambient, so the Pause button stops it too. */
+useAmbientMotion(root, () => {
+  gsap.fromTo(
+    '.hc-pulse',
+    { scale: 1, opacity: 0.6 },
+    {
+      scale: 3,
+      opacity: 0,
+      svgOrigin: '0 0',
+      duration: 1.8,
+      ease: 'power1.out',
+      repeat: -1,
+      repeatDelay: 0.6,
+    },
+  )
+})
 </script>
 
 <template>
-  <section class="pane overflow-hidden" aria-labelledby="hourly-title">
+  <section ref="root" class="pane overflow-hidden" aria-labelledby="hourly-title">
     <h2 id="hourly-title" class="px-6 pt-5 font-display text-lg font-medium sm:px-7">
       Next 24 hours
     </h2>
@@ -70,7 +115,7 @@ const width = computed(() => hours.value.length * COL)
           <li
             v-for="(h, i) in hours"
             :key="h.time"
-            class="flex shrink-0 flex-col items-center"
+            class="hc-col flex shrink-0 flex-col items-center"
             :style="{ width: `${COL}px` }"
           >
             <span class="text-sm font-medium" :style="{ marginTop: `${points[i]!.y - 4}px` }">
@@ -102,15 +147,28 @@ const width = computed(() => hours.value.length * COL)
               <stop offset="1" stop-color="var(--color-sun)" stop-opacity="0" />
             </linearGradient>
           </defs>
-          <path :d="area" fill="url(#hourly-fill)" />
+          <path class="hc-area" :d="area" fill="url(#hourly-fill)" />
           <path
+            class="hc-curve"
             :d="curve"
             fill="none"
             stroke="var(--color-sun)"
             stroke-width="2"
             stroke-linecap="round"
           />
-          <circle :cx="points[0]?.x" :cy="points[0]?.y" r="4" fill="var(--color-sun)" />
+          <!-- Circles sit at the origin of a translated group, so scaling stays centred on "now"
+               even when the hour rolls over and the point moves. -->
+          <g :transform="`translate(${points[0]?.x ?? 0} ${points[0]?.y ?? 0})`">
+            <circle
+              class="hc-pulse"
+              r="4"
+              fill="none"
+              stroke="var(--color-sun)"
+              stroke-width="1.5"
+              opacity="0"
+            />
+            <circle class="hc-now" r="4" fill="var(--color-sun)" />
+          </g>
         </svg>
       </div>
     </div>

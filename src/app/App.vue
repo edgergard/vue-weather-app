@@ -2,7 +2,9 @@
 import { ref } from 'vue'
 import AppHeader from '@/widgets/app-header/AppHeader.vue'
 import SkyBackdrop from '@/widgets/sky-backdrop/SkyBackdrop.vue'
+import { Pause, Play } from 'lucide-vue-next'
 import { focusPageHeading } from '@/shared/lib/focus'
+import { ambientPaused } from '@/shared/lib/motion'
 
 const mainEl = ref<HTMLElement>()
 </script>
@@ -35,10 +37,25 @@ const mainEl = ref<HTMLElement>()
       </Transition>
     </RouterView>
   </main>
-  <footer class="mx-auto max-w-6xl px-4 pb-8 text-sm text-ink-muted sm:px-8">
-    Weather data by
-    <a href="https://open-meteo.com/" class="underline underline-offset-2 hover:text-ink"
-      >Open-Meteo</a
+  <footer
+    class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pb-8 text-sm text-ink-muted sm:px-8"
+  >
+    <p>
+      Weather data by
+      <a href="https://open-meteo.com/" class="underline underline-offset-2 hover:text-ink"
+        >Open-Meteo</a
+      >
+    </p>
+    <!-- WCAG 2.2.2: the moving background can be paused; the choice is remembered. -->
+    <button
+      type="button"
+      class="inline-flex h-9 items-center gap-2 rounded-full border border-line bg-veil px-3 hover:bg-veil-strong hover:text-ink"
+      :aria-pressed="ambientPaused"
+      @click="ambientPaused = !ambientPaused"
     >
+      <Play v-if="ambientPaused" :size="14" aria-hidden="true" />
+      <Pause v-else :size="14" aria-hidden="true" />
+      Pause animations
+    </button>
   </footer>
 </template>

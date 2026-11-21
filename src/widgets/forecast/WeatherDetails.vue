@@ -1,13 +1,35 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Navigation } from 'lucide-vue-next'
 import { todayOf, type Forecast } from '@/entities/weather'
 import { useSettingsStore } from '@/entities/settings'
 import { compassPoint } from '@/shared/lib'
+import { gsap, useMotion } from '@/shared/lib/motion'
 
 const props = defineProps<{ forecast: Forecast }>()
 const { fmt } = storeToRefs(useSettingsStore())
+
+const root = ref<HTMLElement>()
+
+useMotion(root, () => {
+  gsap.from('.wd-cell', {
+    opacity: 0,
+    y: 12,
+    duration: 0.5,
+    stagger: { each: 0.06, grid: 'auto', from: 'start' },
+    delay: 0.3,
+    ease: 'power2.out',
+    clearProps: 'transform,opacity',
+  })
+  // The wind arrow swings round to its bearing.
+  gsap.from('.wd-wind', {
+    rotation: '-=180',
+    duration: 1.4,
+    delay: 0.5,
+    ease: 'elastic.out(1, 0.5)',
+  })
+})
 
 function uvLabel(uv: number) {
   if (uv < 3) return 'Low'
@@ -63,13 +85,13 @@ const items = computed(() => {
 </script>
 
 <template>
-  <section class="pane p-2 sm:p-3" aria-labelledby="details-title">
+  <section ref="root" class="pane p-2 sm:p-3" aria-labelledby="details-title">
     <h2 id="details-title" class="px-4 pt-3 pb-2 font-display text-lg font-medium">Right now</h2>
     <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-[1.25rem] bg-line">
       <div
         v-for="item in items"
         :key="item.key"
-        class="bg-[color-mix(in_oklab,var(--sky-bottom)_88%,black)] px-4 py-4"
+        class="wd-cell bg-[color-mix(in_oklab,var(--sky-bottom)_88%,black)] px-4 py-4"
       >
         <dt class="text-sm text-ink-muted">{{ item.label }}</dt>
         <dd class="mt-1 flex items-center gap-2 font-display text-2xl font-medium tracking-tight">
@@ -77,7 +99,7 @@ const items = computed(() => {
           <Navigation
             v-if="item.key === 'wind'"
             :size="16"
-            class="text-ink-muted"
+            class="wd-wind text-ink-muted"
             :style="{ transform: `rotate(${forecast.current.windDirection + 180}deg)` }"
             aria-hidden="true"
           />
