@@ -143,7 +143,10 @@ function resize() {
   h = Math.max(1, Math.round(window.innerHeight * RES))
   el.width = w
   el.height = h
-  dirty = true
+  // Resizing clears the canvas. Repaint now rather than on the next tick: in a background tab
+  // the ticker doesn't run, and the sky would otherwise stay empty until the tab is shown.
+  draw()
+  dirty = false
 }
 
 // New place or weather: blend colours (and the glow/hue style) smoothly, or switch at once.
@@ -165,13 +168,13 @@ watch(sky, (next) => {
     // A blend may still be running from before reduced motion was turned on; stop it first.
     gsap.killTweensOf(state, 'top,bottom,glow')
     Object.assign(state, target)
-    dirty = true
+    draw()
   }
 })
 
 // Turning "reduce motion" on reverts the drift; redraw once it has, so the still frame is current.
 const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-const onMotionPreference = () => queueMicrotask(() => void (dirty = true))
+const onMotionPreference = () => queueMicrotask(draw)
 
 onMounted(() => {
   ctx = (canvas.value as HTMLCanvasElement | undefined)?.getContext('2d') ?? null
