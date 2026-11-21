@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import { useDocumentVisibility, useMediaQuery, useRafFn } from '@vueuse/core'
 import { ambientPaused, MOTION_OK, motionAllowed } from '@/shared/lib/motion'
+import { createSpinStepper } from '../lib/spinStepper'
 
 interface AutoSpinOptions {
   /** Whether the globe may spin at all right now (map ready, no card open, not zoomed in…). */
@@ -39,10 +40,26 @@ export function useAutoSpin({ enabled, onFrame, idleMs = 4000 }: AutoSpinOptions
       visibility.value === 'visible',
   )
 
-  const raf = useRafFn(({ delta }) => onFrame(Math.min(64, Math.max(0, delta))), {
-    immediate: false,
-  })
-  watch(running, (on) => (on ? raf.resume() : raf.pause()), { immediate: true })
+  // About 60 steps a second: on 120/144 Hz screens the spin would otherwise redraw the whole
+  // globe twice as often for no visible gain. The stepper carries skipped time, so the speed
+  // never changes.
+  const stepper = createSpinStepper()
+  const raf = useRafFn(
+    ({ delta }) => {
+      const step = stepper.next(delta)
+      if (step !== null) onFrame(Math.min(100, step))
+    },
+    { immediate: false },
+  )
+  watch(
+    running,
+    (on) => {
+      stepper.reset()
+      if (on) raf.resume()
+      else raf.pause()
+    },
+    { immediate: true },
+  )
 
   onBeforeUnmount(() => {
     clearTimeout(timer)

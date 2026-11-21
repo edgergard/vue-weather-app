@@ -5,7 +5,8 @@ import {
   globeRadius,
   cullMargin,
   horizonCos,
-  isOnFarSide,
+  cosBetween,
+  preparePoint,
   LIMB_MARGIN,
   MAX_REST_DIAMETER,
   overlayFade,
@@ -28,15 +29,31 @@ describe('back-side culling', () => {
   it('puts the antipode on the far side and a nearby city on the near side', () => {
     const antipode = { lng: kyiv.lng - 180, lat: -kyiv.lat }
     expect(cosAngle(kyiv, antipode)).toBeCloseTo(-1, 10)
-    expect(isOnFarSide(kyiv, antipode)).toBe(true)
-    expect(isOnFarSide(kyiv, { lng: 24.03, lat: 49.84 })).toBe(false) // Lviv
+    expect(cosAngle(kyiv, antipode)).toBeLessThan(LIMB_MARGIN)
+    expect(cosAngle(kyiv, { lng: 24.03, lat: 49.84 })).toBeGreaterThan(LIMB_MARGIN) // Lviv
+  })
+
+  it('gives the same answer for prepared points as for plain ones', () => {
+    const lviv = { lng: 24.03, lat: 49.84 }
+    const sydney = { lng: 151.21, lat: -33.87 }
+    for (const p of [kyiv, lviv, sydney]) {
+      expect(cosBetween(preparePoint(kyiv), preparePoint(p))).toBeCloseTo(
+        Math.sin(kyiv.lat * (Math.PI / 180)) * Math.sin(p.lat * (Math.PI / 180)) +
+          Math.cos(kyiv.lat * (Math.PI / 180)) *
+            Math.cos(p.lat * (Math.PI / 180)) *
+            Math.cos((p.lng - kyiv.lng) * (Math.PI / 180)),
+        12,
+      )
+    }
   })
 
   it('hides points just before the horizon, not only behind it', () => {
     const center = { lng: 0, lat: 0 }
-    expect(isOnFarSide(center, { lng: 80, lat: 0 })).toBe(false) // cos 80 deg = 0.17
-    expect(isOnFarSide(center, { lng: 85, lat: 0 })).toBe(true) // cos 85 deg = 0.09, near the rim
-    expect(isOnFarSide(center, { lng: 85, lat: 0 }, 0)).toBe(false)
+    // A camera far away sees half the sphere; the rim margin alone decides.
+    const margin = cullMargin(1, 1e6)
+    expect(cosAngle(center, { lng: 80, lat: 0 })).toBeGreaterThan(margin) // cos 80 deg = 0.17
+    expect(cosAngle(center, { lng: 85, lat: 0 })).toBeLessThan(margin) // cos 85 deg = 0.09
+    expect(cosAngle(center, { lng: 85, lat: 0 })).toBeGreaterThan(0) // still in front
   })
 
   it('hides markers at the real horizon, which comes closer as the camera zooms in', () => {

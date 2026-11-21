@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, readonly, ref, watch, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, readonly, ref, watch, type Ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { gsap } from 'gsap'
 import { SplitText } from 'gsap/SplitText'
@@ -58,8 +58,26 @@ export function useMotion(scope: Ref<HTMLElement | undefined>, setup: MotionSetu
 export const ambientPaused = useLocalStorage('skyline:ambient-paused', false)
 
 /**
+ * How many mounted components cover the sky with something animating on their own (the globe):
+ * while any do, the sky's loops hold still, to leave the frame budget to them. Not saved, and
+ * separate from the user's choice above, which it never changes. A count, not a flag, so one
+ * leaving can't resume the sky under another that is still there.
+ */
+const suspenders = ref(0)
+export const ambientSuspended = computed(() => suspenders.value > 0)
+
+/** The ambient loops should hold still: the user paused them, or the page suspended them. */
+export const ambientStill = computed(() => ambientPaused.value || ambientSuspended.value)
+
+/** Suspends the sky's ambient loops while the calling component is mounted. */
+export function useSuspendAmbient() {
+  onMounted(() => suspenders.value++)
+  onBeforeUnmount(() => suspenders.value--)
+}
+
+/**
  * Like useMotion, for looping ambient animation: everything it creates freezes while
- * `ambientPaused` is on and picks up again when it is turned off.
+ * `ambientStill` is on and picks up again when it is turned off.
  */
 export function useAmbientMotion(scope: Ref<HTMLElement | undefined>, setup: MotionSetup) {
   // Pause only top-level animations: pausing a timeline freezes its children with it, so loops
@@ -76,10 +94,10 @@ export function useAmbientMotion(scope: Ref<HTMLElement | undefined>, setup: Mot
   const mm = useMotion(scope, (el) => {
     const cleanup = setup(el)
     // Animations exist only after setup has run, so honour a saved "paused" choice right away.
-    queueMicrotask(() => apply(ambientPaused.value))
+    queueMicrotask(() => apply(ambientStill.value))
     return cleanup
   })
-  watch(ambientPaused, apply)
+  watch(ambientStill, apply)
   return mm
 }
 
