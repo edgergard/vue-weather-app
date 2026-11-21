@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
 import AppHeader from '@/widgets/app-header/AppHeader.vue'
 import SkyBackdrop from '@/widgets/sky-backdrop/SkyBackdrop.vue'
 import AppFooter from '@/widgets/app-footer/AppFooter.vue'
 import { focusPageHeading } from '@/shared/lib/focus'
 
 const mainEl = ref<HTMLElement>()
-const currentRoute = useRoute()
 </script>
 
 <template>
@@ -20,14 +18,13 @@ const currentRoute = useRoute()
   </a>
   <SkyBackdrop />
   <AppHeader />
-  <main
-    id="main"
-    ref="mainEl"
-    tabindex="-1"
-    class="w-full flex-1 outline-none"
-    :class="currentRoute.meta.fullBleed ? '' : 'mx-auto max-w-6xl px-4 pb-16 sm:px-8'"
-  >
+  <main id="main" ref="mainEl" tabindex="-1" class="w-full flex-1 outline-none">
     <RouterView v-slot="{ Component, route }">
+      <!--
+        The page width comes from the page being rendered, not the current route: during the
+        out-in transition the old page fades out after the route has already changed, and it
+        must keep its own layout (cards in the centred column) until it is gone.
+      -->
       <Transition
         mode="out-in"
         enter-from-class="opacity-0"
@@ -35,7 +32,11 @@ const currentRoute = useRoute()
         enter-active-class="transition-opacity duration-200"
         leave-active-class="transition-opacity duration-150"
       >
-        <component :is="Component" :key="route.fullPath" />
+        <component
+          :is="Component"
+          :key="route.fullPath"
+          :class="route.meta.fullBleed ? undefined : 'mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8'"
+        />
       </Transition>
     </RouterView>
   </main>
